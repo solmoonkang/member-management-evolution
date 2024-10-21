@@ -13,12 +13,16 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.authplayground.global.auth.CustomUserDetailsService;
+
 import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+	private final CustomUserDetailsService customUserDetailsService;
 
 	@Bean
 	public WebSecurityCustomizer webSecurityCustomizer() {
@@ -40,6 +44,8 @@ public class SecurityConfig {
 		httpSecurity.logout(logout -> logout
 			.logoutSuccessUrl("/api/login")
 			.invalidateHttpSession(true));
+
+		httpSecurity.userDetailsService(customUserDetailsService);
 
 		httpSecurity.sessionManagement(session -> session
 			.sessionCreationPolicy(STATELESS));
