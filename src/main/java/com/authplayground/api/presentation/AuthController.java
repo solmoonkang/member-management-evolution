@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.authplayground.api.application.MemberService;
 import com.authplayground.api.dto.member.SignUpRequest;
 
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	@ResponseStatus(HttpStatus.CREATED)
-	@ApiOperation(value = "회원가입", notes = "새로운 사용자를 등록합니다.")
+	@Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
 	public ResponseEntity<String> createMember(@RequestBody @Valid SignUpRequest signUpRequest) {
 		memberService.createMember(signUpRequest);
 		return ResponseEntity.ok("[✅ SUCCESS] 회원가입이 성공적으로 완료되었습니다.");
