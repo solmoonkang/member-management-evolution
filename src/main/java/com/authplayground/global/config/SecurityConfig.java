@@ -5,6 +5,8 @@ import static org.springframework.security.config.http.SessionCreationPolicy.*;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -37,16 +39,11 @@ public class SecurityConfig {
 	@Bean
 	protected SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
-			.httpBasic(AbstractHttpConfigurer::disable)
-			.formLogin(AbstractHttpConfigurer::disable);
+			.httpBasic(AbstractHttpConfigurer::disable);
 
 		httpSecurity.authorizeHttpRequests(auth -> auth
-			.requestMatchers("/", "/api/signup", "/api/login").permitAll()
+			.requestMatchers("/api/signup", "/api/login").permitAll()
 			.anyRequest().authenticated());
-
-		httpSecurity.logout(logout -> logout
-			.logoutSuccessUrl("/api/login")
-			.invalidateHttpSession(true));
 
 		httpSecurity.userDetailsService(customUserDetailsService);
 
@@ -59,5 +56,14 @@ public class SecurityConfig {
 	@Bean
 	public static PasswordEncoder passwordEncoder() {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	}
+
+	@Bean
+	public AuthenticationManager authenticationManager(HttpSecurity httpSecurity) throws Exception {
+		AuthenticationManagerBuilder authenticationManagerBuilder =
+			httpSecurity.getSharedObject(AuthenticationManagerBuilder.class);
+		authenticationManagerBuilder.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
+
+		return authenticationManagerBuilder.build();
 	}
 }
