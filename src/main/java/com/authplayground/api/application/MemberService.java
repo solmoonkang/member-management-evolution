@@ -19,7 +19,7 @@ public class MemberService {
 	private final MemberRepository memberRepository;
 
 	@Transactional
-	public void createMember(SignUpRequest signUpRequest) {
+	public void signUpMember(SignUpRequest signUpRequest) {
 		validateEmailDuplication(signUpRequest.email());
 		validateNicknameDuplication(signUpRequest.nickname());
 		validatePasswordMatch(signUpRequest.password(), signUpRequest.checkPassword());
