@@ -1,5 +1,6 @@
 package com.authplayground.support;
 
+import com.authplayground.api.domain.member.Member;
 import com.authplayground.api.dto.member.LoginRequest;
 import com.authplayground.api.dto.member.SignUpRequest;
 
@@ -35,5 +36,9 @@ public class MemberFixture {
 			.email("test@gmail.com")
 			.password("12345-wrong")
 			.build();
+	}
+
+	public static Member createMember() {
+		return Member.createMember(signUpMemberRequest(), "12345");
 	}
 }
