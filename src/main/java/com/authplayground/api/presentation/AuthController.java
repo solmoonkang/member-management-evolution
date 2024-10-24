@@ -34,7 +34,7 @@ public class AuthController {
 	@Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
 	public ResponseEntity<String> signUpMember(@RequestBody @Valid SignUpRequest signUpRequest) {
 		memberService.signUpMember(signUpRequest);
-		return ResponseEntity.ok("[✅ SUCCESS] 회원가입이 성공적으로 완료되었습니다.");
+		return ResponseEntity.status(HttpStatus.CREATED).body("[✅ SUCCESS] 회원가입이 성공적으로 완료되었습니다.");
 	}
 
 	@PostMapping("/login")
