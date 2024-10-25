@@ -1,5 +1,7 @@
 package com.authplayground.api.application.auth;
 
+import static com.authplayground.global.util.GlobalConstant.*;
+
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.authplayground.api.domain.auth.AuthMember;
 import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.global.config.TokenConfig;
+import com.authplayground.global.error.exception.NotFoundException;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -16,6 +19,7 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -25,9 +29,6 @@ public class JwtProviderService {
 	private final TokenConfig tokenConfig;
 	private final SecretKey secretKey;
 	private final MemberRepository memberRepository;
-
-	private static final String MEMBER_EMAIL = "email";
-	private static final String MEMBER_NICKNAME = "nickname";
 
 	public JwtProviderService(TokenConfig tokenConfig, MemberRepository memberRepository) {
 		this.tokenConfig = tokenConfig;
@@ -56,6 +57,16 @@ public class JwtProviderService {
 			.compact();
 	}
 
+	public String extractToken(String header, HttpServletRequest httpServletRequest) {
+		final String token = httpServletRequest.getHeader(header);
+
+		if (token == null || !token.startsWith(BEARER)) {
+			log.warn("[✅ LOGGER] {}는 NULL이거나 BEARER가 아닙니다.", header);
+			return null;
+		}
+		return token.replaceFirst(BEARER, "").trim();
+	}
+
 	public AuthMember extractAuthMemberByAccessToken(String accessToken) {
 		final Claims claims = parseClaimsByToken(accessToken);
 		final String memberEmail = claims.get(MEMBER_EMAIL, String.class);
@@ -76,8 +87,10 @@ public class JwtProviderService {
 			log.warn("[✅ LOGGER] JWT 토큰이 만료되었습니다.");
 		} catch (IllegalArgumentException illegalArgumentException) {
 			log.warn("[✅ LOGGER] JWT 토큰이 존재하지 않습니다.");
+			throw new NotFoundException("[❎ ERROR] JWT 토큰이 존재하지 않습니다.");
 		} catch (Exception exception) {
 			log.warn("[✅ LOGGER] 유효하지 않은 토큰입니다.");
+			throw new NotFoundException("[❎ ERROR] 유효하지 않은 토큰입니다.");
 		}
 
 		return false;
