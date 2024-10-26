@@ -33,6 +33,9 @@ public class Member {
 	@Column(name = "password")
 	private String password;
 
+	@Column(name = "refresh_token")
+	private String refreshToken;
+
 	@Builder
 	private Member(String email, String nickname, String password) {
 		this.email = email;
@@ -46,5 +49,9 @@ public class Member {
 			.nickname(signUpRequest.nickname())
 			.password(password)
 			.build();
+	}
+
+	public void updateMemberRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
 	}
 }
