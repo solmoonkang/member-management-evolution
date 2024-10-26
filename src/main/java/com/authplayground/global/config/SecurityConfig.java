@@ -5,8 +5,6 @@ import static org.springframework.security.config.http.SessionCreationPolicy.*;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -14,17 +12,26 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
-import com.authplayground.global.auth.CustomUserDetailsService;
-
-import lombok.RequiredArgsConstructor;
+import com.authplayground.api.application.auth.JwtProviderService;
+import com.authplayground.global.auth.filter.AuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final CustomUserDetailsService customUserDetailsService;
+	private final JwtProviderService jwtProviderService;
+	private final HandlerExceptionResolver handlerExceptionResolver;
+
+	public SecurityConfig(
+		JwtProviderService jwtProviderService,
+		HandlerExceptionResolver handlerExceptionResolver)
+	{
+		this.jwtProviderService = jwtProviderService;
+		this.handlerExceptionResolver = handlerExceptionResolver;
+	}
 
 	@Bean
 	public WebSecurityCustomizer webSecurityCustomizer() {
@@ -45,7 +52,9 @@ public class SecurityConfig {
 			.requestMatchers("/api/signup", "/api/login").permitAll()
 			.anyRequest().authenticated());
 
-		httpSecurity.userDetailsService(customUserDetailsService);
+		httpSecurity.addFilterBefore(
+			new AuthenticationFilter(jwtProviderService, handlerExceptionResolver),
+			UsernamePasswordAuthenticationFilter.class);
 
 		httpSecurity.sessionManagement(session -> session
 			.sessionCreationPolicy(STATELESS));
@@ -56,14 +65,5 @@ public class SecurityConfig {
 	@Bean
 	public static PasswordEncoder passwordEncoder() {
 		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-	}
-
-	@Bean
-	public AuthenticationManager authenticationManager(HttpSecurity httpSecurity) throws Exception {
-		AuthenticationManagerBuilder authenticationManagerBuilder =
-			httpSecurity.getSharedObject(AuthenticationManagerBuilder.class);
-		authenticationManagerBuilder.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
-
-		return authenticationManagerBuilder.build();
 	}
 }
