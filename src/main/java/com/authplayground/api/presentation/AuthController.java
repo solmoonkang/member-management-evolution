@@ -14,6 +14,7 @@ import com.authplayground.api.dto.member.LoginResponse;
 import com.authplayground.api.dto.member.SignUpRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,10 @@ public class AuthController {
 	@PostMapping("/login")
 	@ResponseStatus(HttpStatus.OK)
 	@Operation(summary = "로그인", description = "기존 사용자가 로그인했습니다.")
-	public ResponseEntity<LoginResponse> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
-		return ResponseEntity.ok().body(authenticationService.loginMember(loginRequest));
+	public ResponseEntity<LoginResponse> loginMember(
+		@RequestBody @Valid LoginRequest loginRequest,
+		HttpServletResponse httpServletResponse)
+	{
+		return ResponseEntity.ok().body(authenticationService.loginMember(loginRequest, httpServletResponse));
 	}
 }
