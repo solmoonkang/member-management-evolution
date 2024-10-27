@@ -7,8 +7,10 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.authplayground.api.domain.auth.AuthMember;
+import com.authplayground.api.domain.member.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.global.config.TokenConfig;
 import com.authplayground.global.error.exception.NotFoundException;
@@ -20,6 +22,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -55,6 +58,21 @@ public class JwtProviderService {
 		return buildJwt(issuedDate, expiredDate)
 			.claim(MEMBER_EMAIL, email)
 			.compact();
+	}
+
+	@Transactional
+	public String reGenerateToken(String refreshToken, HttpServletResponse httpServletResponse) {
+		final Claims claims = parseClaimsByToken(refreshToken);
+		final String memberEmail = claims.get(MEMBER_EMAIL, String.class);
+		final Member member = memberRepository.findMemberByEmail(memberEmail)
+			.orElseThrow(() -> new NotFoundException("[❎ ERROR] 요청하신 사용자는 존재하지 않는 사용자입니다."));
+
+		validateRefreshToken(refreshToken, member.getRefreshToken());
+		final String newAccessToken = generateAccessToken(member.getEmail(), member.getNickname());
+		final String newRefreshToken = generateRefreshToken(member.getEmail());
+
+		member.updateMemberRefreshToken(newRefreshToken);
+		return newAccessToken;
 	}
 
 	public String extractToken(String header, HttpServletRequest httpServletRequest) {
@@ -110,5 +128,12 @@ public class JwtProviderService {
 			.build()
 			.parseSignedClaims(token)
 			.getPayload();
+	}
+
+	private void validateRefreshToken(String reGenerateRefreshToken, String savedRefreshToken) {
+		if (!reGenerateRefreshToken.equals(savedRefreshToken)) {
+			log.warn("[✅ LOGGER] 유효하지 않은 리프레시 토큰입니다.");
+			throw new NotFoundException("[❎ ERROR] 유효하지 않은 리프레시 토큰입니다.");
+		}
 	}
 }
