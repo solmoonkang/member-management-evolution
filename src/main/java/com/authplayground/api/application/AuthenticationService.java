@@ -1,5 +1,7 @@
 package com.authplayground.api.application;
 
+import static com.authplayground.global.util.GlobalConstant.*;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +15,10 @@ import com.authplayground.api.dto.member.SignUpRequest;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
 import com.authplayground.global.error.exception.NotFoundException;
+import com.authplayground.global.util.CookieUtil;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -37,13 +42,15 @@ public class AuthenticationService {
 	}
 
 	@Transactional
-	public LoginResponse loginMember(LoginRequest loginRequest) {
+	public LoginResponse loginMember(LoginRequest loginRequest, HttpServletResponse httpServletResponse) {
 		final Member member = findMemberByEmail(loginRequest.email());
 		validateLoginPasswordMatch(loginRequest.password(), member.getPassword());
 
 		final String accessToken = jwtProviderService.generateAccessToken(member.getEmail(), member.getNickname());
 		final String refreshToken = jwtProviderService.generateRefreshToken(member.getEmail());
 		member.updateMemberRefreshToken(refreshToken);
+
+		addRefreshTokenCookie(refreshToken, httpServletResponse);
 
 		return new LoginResponse(accessToken, refreshToken);
 	}
@@ -75,5 +82,10 @@ public class AuthenticationService {
 		if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
 			throw new BadRequestException("[❎ ERROR] 입력하신 비밀번호는 틀린 비밀번호입니다.");
 		}
+	}
+
+	private void addRefreshTokenCookie(String refreshToken, HttpServletResponse httpServletResponse) {
+		final Cookie refreshTokenCookie = CookieUtil.generateRefreshTokenCookie(REFRESH_TOKEN_COOKIE, refreshToken);
+		httpServletResponse.addCookie(refreshTokenCookie);
 	}
 }
