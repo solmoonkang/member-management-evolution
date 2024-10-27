@@ -35,11 +35,21 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(
 		@NotNull HttpServletRequest httpServletRequest,
 		@NotNull HttpServletResponse httpServletResponse,
-		@NotNull FilterChain filterChain) {
-		final String accessToken = jwtProviderService.extractToken(ACCESS_TOKEN_HEADER, httpServletRequest);
+		@NotNull FilterChain filterChain)
+	{
+		String accessToken = jwtProviderService.extractToken(ACCESS_TOKEN_HEADER, httpServletRequest);
+		String refreshToken = jwtProviderService.extractToken(REFRESH_TOKEN_COOKIE, httpServletRequest);
 
 		try {
 			if (jwtProviderService.isUsable(accessToken)) {
+				setAuthenticate(accessToken);
+				filterChain.doFilter(httpServletRequest, httpServletResponse);
+
+				return;
+			}
+
+			if (jwtProviderService.isUsable(refreshToken)) {
+				accessToken = jwtProviderService.reGenerateToken(refreshToken, httpServletResponse);
 				setAuthenticate(accessToken);
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
 
