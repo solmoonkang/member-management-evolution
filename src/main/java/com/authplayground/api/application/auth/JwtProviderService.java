@@ -14,6 +14,7 @@ import com.authplayground.api.domain.member.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.global.config.TokenConfig;
 import com.authplayground.global.error.exception.NotFoundException;
+import com.authplayground.global.util.CookieUtil;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -21,6 +22,7 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -68,10 +70,15 @@ public class JwtProviderService {
 			.orElseThrow(() -> new NotFoundException("[❎ ERROR] 요청하신 사용자는 존재하지 않는 사용자입니다."));
 
 		validateRefreshToken(refreshToken, member.getRefreshToken());
+
 		final String newAccessToken = generateAccessToken(member.getEmail(), member.getNickname());
 		final String newRefreshToken = generateRefreshToken(member.getEmail());
 
 		member.updateMemberRefreshToken(newRefreshToken);
+
+		final Cookie refreshTokenCookie = CookieUtil.generateRefreshTokenCookie(REFRESH_TOKEN_COOKIE, newRefreshToken);
+		httpServletResponse.addCookie(refreshTokenCookie);
+
 		return newAccessToken;
 	}
 
