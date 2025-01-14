@@ -10,17 +10,12 @@ Auth-Playground는 로그인 및 회원가입 기능을 구현하기 위해 시�
 
 **Language**: JAVA 17, **Framework**: SpringBoot 3.3.4, **ORM**: JPA
 
-<img src="https://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java">
-<img src="https://img.shields.io/badge/spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Boot">
-<img src="https://img.shields.io/badge/hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white" alt="JPA">
+<img src="https://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java"> <img src="https://img.shields.io/badge/spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Boot"> <img src="https://img.shields.io/badge/hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white" alt="JPA">
 <br>
 
 **Build-Tool**: Gradle, **Dev-Tool**: IntelliJ IDEA, **Test**: JUnit5, **Database**: H2
 
-<img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white" alt="Gradle">
-<img src="https://img.shields.io/badge/intellij-000000?style=for-the-badge&logo=intellij-idea&logoColor=white" alt="IntelliJ IDEA">
-<img src="https://img.shields.io/badge/junit5-25A162?style=for-the-badge&logo=junit5&logoColor=white" alt="JUnit 5">
-<img src="https://img.shields.io/badge/h2-4CAF50?style=for-the-badge&logo=h2&logoColor=white" alt="H2">
+<img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white" alt="Gradle"> <img src="https://img.shields.io/badge/intellij-000000?style=for-the-badge&logo=intellij-idea&logoColor=white" alt="IntelliJ IDEA"> <img src="https://img.shields.io/badge/junit5-25A162?style=for-the-badge&logo=junit5&logoColor=white" alt="JUnit 5"> <img src="https://img.shields.io/badge/h2-4CAF50?style=for-the-badge&logo=h2&logoColor=white" alt="H2">
 
 ## 구현 설명
 
