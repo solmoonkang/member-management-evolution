@@ -8,11 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.authplayground.api.application.auth.JwtProviderService;
+import com.authplayground.api.domain.auth.repository.TokenRepository;
 import com.authplayground.api.domain.member.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
-import com.authplayground.api.dto.member.LoginRequest;
-import com.authplayground.api.dto.member.LoginResponse;
-import com.authplayground.api.dto.member.SignUpRequest;
+import com.authplayground.api.dto.request.LoginRequest;
+import com.authplayground.api.dto.request.SignUpRequest;
+import com.authplayground.api.dto.response.LoginResponse;
+import com.authplayground.api.dto.response.TokenResponse;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
 import com.authplayground.global.error.exception.NotFoundException;
@@ -28,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthenticationService {
 
 	private final PasswordEncoder passwordEncoder;
+	private final TokenRepository tokenRepository;
 	private final MemberRepository memberRepository;
 	private final JwtProviderService jwtProviderService;
 
@@ -38,7 +41,6 @@ public class AuthenticationService {
 		validatePasswordAndCheckPasswordMatch(signUpRequest.password(), signUpRequest.checkPassword());
 
 		final Member member = Member.createMember(signUpRequest, passwordEncoder.encode(signUpRequest.password()));
-
 		memberRepository.save(member);
 	}
 
@@ -49,8 +51,9 @@ public class AuthenticationService {
 
 		final String accessToken = jwtProviderService.generateAccessToken(member.getEmail(), member.getNickname());
 		final String refreshToken = jwtProviderService.generateRefreshToken(member.getEmail());
-		member.updateMemberRefreshToken(refreshToken);
+		tokenRepository.saveToken(member.getEmail(), TokenResponse.builder().refreshToken(refreshToken).build());
 
+		httpServletResponse.setHeader(ACCESS_TOKEN_HEADER, accessToken);
 		addRefreshTokenCookie(refreshToken, httpServletResponse);
 
 		return new LoginResponse(accessToken, refreshToken);
