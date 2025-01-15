@@ -1,8 +1,8 @@
 package com.authplayground.support;
 
 import com.authplayground.api.domain.member.Member;
-import com.authplayground.api.dto.member.LoginRequest;
-import com.authplayground.api.dto.member.SignUpRequest;
+import com.authplayground.api.dto.request.LoginRequest;
+import com.authplayground.api.dto.request.SignUpRequest;
 
 public class MemberFixture {
 

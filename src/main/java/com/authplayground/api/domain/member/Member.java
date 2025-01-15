@@ -1,6 +1,6 @@
 package com.authplayground.api.domain.member;
 
-import com.authplayground.api.dto.member.SignUpRequest;
+import com.authplayground.api.dto.request.SignUpRequest;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

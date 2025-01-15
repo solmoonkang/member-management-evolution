@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.authplayground.api.application.AuthenticationService;
-import com.authplayground.api.dto.member.LoginRequest;
-import com.authplayground.api.dto.member.LoginResponse;
-import com.authplayground.api.dto.member.SignUpRequest;
+import com.authplayground.api.dto.request.LoginRequest;
+import com.authplayground.api.dto.response.LoginResponse;
+import com.authplayground.api.dto.request.SignUpRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;

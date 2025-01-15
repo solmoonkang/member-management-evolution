@@ -1,5 +1,6 @@
 package com.authplayground.api.application.auth;
 
+import static com.authplayground.global.error.model.ErrorMessage.*;
 import static com.authplayground.global.util.GlobalConstant.*;
 
 import java.util.Date;
@@ -10,8 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.authplayground.api.domain.auth.AuthMember;
-import com.authplayground.api.domain.member.Member;
-import com.authplayground.api.domain.member.repository.MemberRepository;
+import com.authplayground.api.domain.auth.repository.TokenRepository;
+import com.authplayground.api.dto.response.LoginResponse;
+import com.authplayground.api.dto.response.TokenResponse;
 import com.authplayground.global.config.TokenConfig;
 import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.global.util.CookieUtil;
@@ -33,14 +35,14 @@ public class JwtProviderService {
 
 	private final TokenConfig tokenConfig;
 	private final SecretKey secretKey;
-	private final MemberRepository memberRepository;
+	private final TokenRepository tokenRepository;
 
-	public JwtProviderService(TokenConfig tokenConfig, MemberRepository memberRepository) {
+	public JwtProviderService(TokenConfig tokenConfig, TokenRepository tokenRepository) {
 		this.tokenConfig = tokenConfig;
 		byte[] secretKeyBytes = Decoders.BASE64.decode(tokenConfig.getSecretAccessKey());
 
 		this.secretKey = Keys.hmacShaKeyFor(secretKeyBytes);
-		this.memberRepository = memberRepository;
+		this.tokenRepository = tokenRepository;
 	}
 
 	public String generateAccessToken(String email, String nickname) {
@@ -66,15 +68,19 @@ public class JwtProviderService {
 	public String reGenerateToken(String refreshToken, HttpServletResponse httpServletResponse) {
 		final Claims claims = parseClaimsByToken(refreshToken);
 		final String memberEmail = claims.get(MEMBER_EMAIL, String.class);
-		final Member member = memberRepository.findMemberByEmail(memberEmail)
-			.orElseThrow(() -> new NotFoundException("[❎ ERROR] 요청하신 사용자는 존재하지 않는 사용자입니다."));
+		final String memberNickname = claims.get(MEMBER_NICKNAME, String.class);
 
-		validateRefreshToken(refreshToken, member.getRefreshToken());
+		LoginResponse loginResponse = tokenRepository.getTokenSaveValue(memberEmail);
+		// 토큰 검증 로직
 
-		final String newAccessToken = generateAccessToken(member.getEmail(), member.getNickname());
-		final String newRefreshToken = generateRefreshToken(member.getEmail());
+		validateRefreshToken(refreshToken, loginResponse.refreshToken());
 
-		member.updateMemberRefreshToken(newRefreshToken);
+		final String newAccessToken = generateAccessToken(memberEmail, memberNickname);
+		final String newRefreshToken = generateRefreshToken(memberEmail);
+
+		tokenRepository.saveToken(memberEmail, new TokenResponse(newRefreshToken));
+
+		httpServletResponse.setHeader(ACCESS_TOKEN_HEADER, newAccessToken);
 
 		final Cookie refreshTokenCookie = CookieUtil.generateRefreshTokenCookie(REFRESH_TOKEN_COOKIE, newRefreshToken);
 		httpServletResponse.addCookie(refreshTokenCookie);
@@ -112,10 +118,10 @@ public class JwtProviderService {
 			log.warn("[✅ LOGGER] JWT 토큰이 만료되었습니다.");
 		} catch (IllegalArgumentException illegalArgumentException) {
 			log.warn("[✅ LOGGER] JWT 토큰이 존재하지 않습니다.");
-			throw new NotFoundException("[❎ ERROR] JWT 토큰이 존재하지 않습니다.");
+			throw new NotFoundException(FAILED_TOKEN_NOT_FOUND);
 		} catch (Exception exception) {
 			log.warn("[✅ LOGGER] 유효하지 않은 토큰입니다.");
-			throw new NotFoundException("[❎ ERROR] 유효하지 않은 토큰입니다.");
+			throw new NotFoundException(FAILED_INVALID_TOKEN);
 		}
 
 		return false;
@@ -140,7 +146,7 @@ public class JwtProviderService {
 	private void validateRefreshToken(String reGenerateRefreshToken, String savedRefreshToken) {
 		if (!reGenerateRefreshToken.equals(savedRefreshToken)) {
 			log.warn("[✅ LOGGER] 유효하지 않은 리프레시 토큰입니다.");
-			throw new NotFoundException("[❎ ERROR] 유효하지 않은 리프레시 토큰입니다.");
+			throw new NotFoundException(FAILED_TOKEN_NOT_FOUND);
 		}
 	}
 }
