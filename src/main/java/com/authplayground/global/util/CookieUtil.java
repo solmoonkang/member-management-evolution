@@ -1,6 +1,9 @@
 package com.authplayground.global.util;
 
+import static com.authplayground.global.util.GlobalConstant.*;
+
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class CookieUtil {
 
@@ -13,6 +16,16 @@ public class CookieUtil {
 		refreshTokenCookie.setPath("/");
 
 		return refreshTokenCookie;
+	}
+
+	public static String extractRefreshTokenFromCookies(HttpServletRequest httpServletRequest) {
+		if (httpServletRequest.getCookies() != null) {
+			for (Cookie cookie : httpServletRequest.getCookies()) {
+				if (REFRESH_TOKEN_COOKIE.equals(cookie.getName())) return cookie.getValue();
+			}
+		}
+
+		return null;
 	}
 
 	public static Cookie expireRefreshTokenCookie(String refreshTokenName) {
