@@ -1,5 +1,7 @@
 package com.authplayground.global.auth.filter;
 
+import static com.authplayground.global.error.model.ErrorMessage.*;
+import static com.authplayground.global.util.CookieUtil.*;
 import static com.authplayground.global.util.GlobalConstant.*;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,7 +16,6 @@ import com.authplayground.global.auth.AuthenticationThreadLocal;
 import com.authplayground.global.error.exception.NotFoundException;
 
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
@@ -23,12 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AuthenticationFilter extends OncePerRequestFilter {
 
+	private static final String SIGNUP_URI = "/api/signup";
+	private static final String LOGIN_URI = "/api/login";
+
 	protected final JwtProviderService jwtProviderService;
 	protected final HandlerExceptionResolver handlerExceptionResolver;
 
 	public AuthenticationFilter(
-		JwtProviderService jwtProviderService,
-		HandlerExceptionResolver handlerExceptionResolver)
+		JwtProviderService jwtProviderService, HandlerExceptionResolver handlerExceptionResolver)
 	{
 		this.jwtProviderService = jwtProviderService;
 		this.handlerExceptionResolver = handlerExceptionResolver;
@@ -38,16 +41,20 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(
 		@NotNull HttpServletRequest httpServletRequest,
 		@NotNull HttpServletResponse httpServletResponse,
-		@NotNull FilterChain filterChain)
-	{
+		@NotNull FilterChain filterChain) {
 		String accessToken = jwtProviderService.extractToken(ACCESS_TOKEN_HEADER, httpServletRequest);
 		String refreshToken = extractRefreshTokenFromCookies(httpServletRequest);
+		String URI = httpServletRequest.getRequestURI();
 
 		try {
+			if (URI.equals(SIGNUP_URI) || URI.equals(LOGIN_URI)) {
+				filterChain.doFilter(httpServletRequest, httpServletResponse);
+				return;
+			}
+
 			if (jwtProviderService.isUsable(accessToken)) {
 				setAuthenticate(accessToken);
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
-
 				return;
 			}
 
@@ -55,11 +62,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 				accessToken = jwtProviderService.reGenerateToken(refreshToken, httpServletResponse);
 				setAuthenticate(accessToken);
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
-
 				return;
 			}
 
-			throw new NotFoundException("[❎ ERROR] JWT 토큰이 존재하지 않습니다.");
+			throw new NotFoundException(FAILED_TOKEN_NOT_FOUND);
 		} catch (Exception exception) {
 			log.warn("[✅ LOGGER] JWT 에러 상세 설명: {}", exception.getMessage());
 			handlerExceptionResolver.resolveException(httpServletRequest, httpServletResponse, null, exception);
@@ -70,26 +76,8 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 
 	protected void setAuthenticate(String accessToken) {
 		final AuthMember authMember = jwtProviderService.extractAuthMemberByAccessToken(accessToken);
-		setAuthMemberInThreadLocal(authMember);
-		setAuthenticationInContextHolder(authMember);
-	}
-
-	private void setAuthMemberInThreadLocal(AuthMember authMember) {
-		AuthenticationThreadLocal.setAuthMemberHolder(authMember);
-	}
-
-	private void setAuthenticationInContextHolder(AuthMember authMember) {
 		final Authentication authentication = new UsernamePasswordAuthenticationToken(authMember, BLANK);
+		AuthenticationThreadLocal.setAuthMemberHolder(authMember);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
-	}
-
-	private String extractRefreshTokenFromCookies(HttpServletRequest httpServletRequest) {
-		if (httpServletRequest.getCookies() != null) {
-			for (Cookie cookie : httpServletRequest.getCookies()) {
-				if (REFRESH_TOKEN_COOKIE.equals(cookie.getName())) return cookie.getValue();
-			}
-		}
-
-		return null;
 	}
 }
