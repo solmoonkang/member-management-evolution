@@ -1,5 +1,6 @@
 package com.authplayground.api.application;
 
+import static com.authplayground.global.error.model.ErrorMessage.*;
 import static com.authplayground.global.util.GlobalConstant.*;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,30 +58,30 @@ public class AuthenticationService {
 
 	private Member findMemberByEmail(String email) {
 		return memberRepository.findMemberByEmail(email)
-			.orElseThrow(() -> new NotFoundException("[❎ ERROR] 요청하신 사용자는 존재하지 않는 사용자입니다."));
+			.orElseThrow(() -> new NotFoundException(FAILED_MEMBER_NOT_FOUND));
 	}
 
 	private void validateEmailDuplication(String email) {
 		if (memberRepository.existsMemberByEmail(email)) {
-			throw new ConflictException("[❎ ERROR] 입력하신 이메일은 이미 존재하는 이메일입니다.");
+			throw new ConflictException(FAILED_EMAIL_DUPLICATION);
 		}
 	}
 
 	private void validateNicknameDuplication(String nickname) {
 		if (memberRepository.existsMemberByNickname(nickname)) {
-			throw new ConflictException("[❎ ERROR] 입력하신 닉네임은 이미 존재하는 닉네임입니다.");
+			throw new ConflictException(FAILED_NICKNAME_DUPLICATION);
 		}
 	}
 
 	private void validatePasswordAndCheckPasswordMatch(String password, String checkPassword) {
 		if (!password.equals(checkPassword)) {
-			throw new ConflictException("[❎ ERROR] 입력하신 비밀번호와 일치하지 않습니다.");
+			throw new ConflictException(FAILED_PASSWORD_MISMATCH);
 		}
 	}
 
 	private void validateLoginPasswordMatch(String rawPassword, String encodedPassword) {
 		if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
-			throw new BadRequestException("[❎ ERROR] 입력하신 비밀번호는 틀린 비밀번호입니다.");
+			throw new BadRequestException(FAILED_INVALID_PASSWORD);
 		}
 	}
 
