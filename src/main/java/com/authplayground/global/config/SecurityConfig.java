@@ -18,20 +18,15 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import com.authplayground.api.application.auth.JwtProviderService;
 import com.authplayground.global.auth.filter.AuthenticationFilter;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
 	private final JwtProviderService jwtProviderService;
 	private final HandlerExceptionResolver handlerExceptionResolver;
-
-	public SecurityConfig(
-		JwtProviderService jwtProviderService,
-		HandlerExceptionResolver handlerExceptionResolver)
-	{
-		this.jwtProviderService = jwtProviderService;
-		this.handlerExceptionResolver = handlerExceptionResolver;
-	}
 
 	@Bean
 	public WebSecurityCustomizer webSecurityCustomizer() {
