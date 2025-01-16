@@ -5,8 +5,6 @@ import static com.authplayground.global.util.GlobalConstant.*;
 
 import java.util.Date;
 
-import javax.crypto.SecretKey;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,28 +20,19 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class JwtProviderService {
 
 	private final TokenConfig tokenConfig;
-	private final SecretKey secretKey;
 	private final TokenRepository tokenRepository;
-
-	public JwtProviderService(TokenConfig tokenConfig, TokenRepository tokenRepository) {
-		this.tokenConfig = tokenConfig;
-		byte[] secretKeyBytes = Decoders.BASE64.decode(tokenConfig.getSecretAccessKey());
-
-		this.secretKey = Keys.hmacShaKeyFor(secretKeyBytes);
-		this.tokenRepository = tokenRepository;
-	}
 
 	public String generateAccessToken(String email, String nickname) {
 		final Date issuedDate = new Date();
@@ -109,7 +98,7 @@ public class JwtProviderService {
 	public boolean isUsable(String token) {
 		try {
 			Jwts.parser()
-				.verifyWith(secretKey)
+				.verifyWith(tokenConfig.getSecretKey())
 				.build()
 				.parseSignedClaims(token);
 
@@ -132,12 +121,12 @@ public class JwtProviderService {
 			.issuer(tokenConfig.getIss())
 			.issuedAt(issuedDate)
 			.expiration(expiredDate)
-			.signWith(secretKey);
+			.signWith(tokenConfig.getSecretKey());
 	}
 
 	private Claims parseClaimsByToken(String token) {
 		return Jwts.parser()
-			.verifyWith(secretKey)
+			.verifyWith(tokenConfig.getSecretKey())
 			.build()
 			.parseSignedClaims(token)
 			.getPayload();
