@@ -1,7 +1,7 @@
 package com.authplayground.api.application;
 
+import static com.authplayground.global.common.util.GlobalConstant.*;
 import static com.authplayground.global.error.model.ErrorMessage.*;
-import static com.authplayground.global.util.GlobalConstant.*;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,10 +15,10 @@ import com.authplayground.api.dto.request.LoginRequest;
 import com.authplayground.api.dto.request.SignUpRequest;
 import com.authplayground.api.dto.response.LoginResponse;
 import com.authplayground.api.dto.response.TokenResponse;
+import com.authplayground.global.common.util.CookieUtil;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
 import com.authplayground.global.error.exception.NotFoundException;
-import com.authplayground.global.util.CookieUtil;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -49,8 +49,9 @@ public class AuthenticationService {
 		final Member member = findMemberByEmail(loginRequest.email());
 		validateLoginPasswordMatch(loginRequest.password(), member.getPassword());
 
-		final String accessToken = jwtProviderService.generateAccessToken(member.getEmail(), member.getNickname());
-		final String refreshToken = jwtProviderService.generateRefreshToken(member.getEmail());
+		final String accessToken = jwtProviderService.generateAccessToken(
+			member.getEmail(), member.getNickname(), member.getRole());
+		final String refreshToken = jwtProviderService.generateRefreshToken(member.getEmail(), member.getRole());
 		tokenRepository.saveToken(member.getEmail(), TokenResponse.builder().refreshToken(refreshToken).build());
 
 		httpServletResponse.setHeader(ACCESS_TOKEN_HEADER, accessToken);
