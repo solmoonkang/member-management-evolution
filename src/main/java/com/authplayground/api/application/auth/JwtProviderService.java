@@ -1,7 +1,7 @@
 package com.authplayground.api.application.auth;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
-import static com.authplayground.global.util.GlobalConstant.*;
+import static com.authplayground.global.common.util.GlobalConstant.*;
 
 import java.util.Date;
 
@@ -14,7 +14,8 @@ import com.authplayground.api.dto.response.LoginResponse;
 import com.authplayground.api.dto.response.TokenResponse;
 import com.authplayground.global.config.TokenConfig;
 import com.authplayground.global.error.exception.NotFoundException;
-import com.authplayground.global.util.CookieUtil;
+import com.authplayground.global.error.exception.UnauthorizedException;
+import com.authplayground.global.common.util.CookieUtil;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -60,7 +61,7 @@ public class JwtProviderService {
 		final String memberNickname = claims.get(MEMBER_NICKNAME, String.class);
 
 		LoginResponse loginResponse = tokenRepository.getTokenSaveValue(memberEmail);
-		// 토큰 검증 로직
+		validateLoginResponse(loginResponse);
 
 		validateRefreshToken(refreshToken, loginResponse.refreshToken());
 
@@ -136,6 +137,12 @@ public class JwtProviderService {
 		if (!reGenerateRefreshToken.equals(savedRefreshToken)) {
 			log.warn("[✅ LOGGER] 유효하지 않은 리프레시 토큰입니다.");
 			throw new NotFoundException(FAILED_TOKEN_NOT_FOUND);
+		}
+	}
+
+	private void validateLoginResponse(LoginResponse loginResponse) {
+		if (loginResponse == null || loginResponse.refreshToken() == null) {
+			throw new UnauthorizedException(FAILED_UNAUTHORIZED_MEMBER);
 		}
 	}
 }
