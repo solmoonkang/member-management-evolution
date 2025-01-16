@@ -1,10 +1,11 @@
 package com.authplayground.api.domain.auth.repository;
 
+import static com.authplayground.global.common.util.RedisConstant.*;
+
 import java.time.Duration;
 
 import org.springframework.stereotype.Repository;
 
-import com.authplayground.api.dto.response.LoginResponse;
 import com.authplayground.api.dto.response.TokenResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -18,14 +19,14 @@ public class TokenRepository {
 	private final HashRedisRepository hashRedisRepository;
 
 	public void saveToken(String email, TokenResponse tokenResponse) {
-		hashRedisRepository.save(email, tokenResponse, Duration.ofDays(EXPIRE_DAYS));
+		hashRedisRepository.save(REDIS_REFRESH_TOKEN_PREFIX + email, tokenResponse, Duration.ofDays(EXPIRE_DAYS));
 	}
 
-	public LoginResponse getTokenSaveValue(String email) {
-		return (LoginResponse)hashRedisRepository.get(email);
+	public TokenResponse getTokenSaveValue(String email) {
+		return (TokenResponse)hashRedisRepository.get(REDIS_REFRESH_TOKEN_PREFIX + email);
 	}
 
 	public void deleteToken(String email) {
-		hashRedisRepository.delete(email);
+		hashRedisRepository.delete(REDIS_REFRESH_TOKEN_PREFIX + email);
 	}
 }
