@@ -1,4 +1,4 @@
-package com.authplayground.global.util;
+package com.authplayground.global.common.util;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -9,6 +9,7 @@ public class GlobalConstant {
 	// JWT 클레임 상수
 	public static final String MEMBER_EMAIL = "email";
 	public static final String MEMBER_NICKNAME = "nickname";
+	public static final String MEMBER_ROLE = "role";
 
 	// JWT 관련 상수
 	public static final String BLANK = " ";
