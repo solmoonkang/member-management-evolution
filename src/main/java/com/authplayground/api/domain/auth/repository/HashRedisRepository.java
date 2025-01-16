@@ -1,7 +1,5 @@
 package com.authplayground.api.domain.auth.repository;
 
-import static com.authplayground.global.error.model.ErrorMessage.*;
-
 import java.time.Duration;
 import java.util.Map;
 
@@ -11,7 +9,6 @@ import org.springframework.data.redis.hash.Jackson2HashMapper;
 import org.springframework.stereotype.Repository;
 
 import com.authplayground.api.dto.response.TokenResponse;
-import com.authplayground.global.error.exception.UnauthorizedException;
 
 @Repository
 public class HashRedisRepository {
@@ -31,19 +28,10 @@ public class HashRedisRepository {
 
 	public Object get(String key) {
 		final Map<String, Object> memberTokenMap = hashOperations.entries(key);
-		validUnauthorizedMember(memberTokenMap);
-
 		return TokenResponse.createTokenFromMap(memberTokenMap);
 	}
 
 	public void delete(String key) {
 		redisTemplate.delete(key);
-	}
-
-	// TODO: SRP(단일 책임 원칙) 위배 가능성이 있으므로, 서비스에서 비즈니스 로직을 처리할 때 검증을 할 수 있도록 하자.
-	private void validUnauthorizedMember(Map<String, Object> memberTokenMap) {
-		if (memberTokenMap.isEmpty()) {
-			throw new UnauthorizedException(FAILED_UNAUTHORIZED_MEMBER);
-		}
 	}
 }
