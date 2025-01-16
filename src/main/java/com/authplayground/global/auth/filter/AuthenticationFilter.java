@@ -1,8 +1,8 @@
 package com.authplayground.global.auth.filter;
 
+import static com.authplayground.global.common.util.CookieUtil.*;
+import static com.authplayground.global.common.util.GlobalConstant.*;
 import static com.authplayground.global.error.model.ErrorMessage.*;
-import static com.authplayground.global.util.CookieUtil.*;
-import static com.authplayground.global.util.GlobalConstant.*;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,9 +19,11 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor
 public class AuthenticationFilter extends OncePerRequestFilter {
 
 	private static final String SIGNUP_URI = "/api/signup";
@@ -29,13 +31,6 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 
 	protected final JwtProviderService jwtProviderService;
 	protected final HandlerExceptionResolver handlerExceptionResolver;
-
-	public AuthenticationFilter(
-		JwtProviderService jwtProviderService, HandlerExceptionResolver handlerExceptionResolver)
-	{
-		this.jwtProviderService = jwtProviderService;
-		this.handlerExceptionResolver = handlerExceptionResolver;
-	}
 
 	@Override
 	protected void doFilterInternal(
