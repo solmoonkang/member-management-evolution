@@ -1,4 +1,4 @@
-package com.authplayground.api.domain.auth.repository;
+package com.authplayground.api.infrastructure.redis;
 
 import java.time.Duration;
 import java.util.Map;

@@ -7,6 +7,7 @@ import java.time.Duration;
 import org.springframework.stereotype.Repository;
 
 import com.authplayground.api.dto.response.TokenResponse;
+import com.authplayground.api.infrastructure.redis.HashRedisRepository;
 
 import lombok.RequiredArgsConstructor;
 
