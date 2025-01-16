@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.authplayground.api.domain.auth.AuthMember;
 import com.authplayground.api.domain.auth.repository.TokenRepository;
+import com.authplayground.api.domain.member.Role;
 import com.authplayground.api.dto.response.LoginResponse;
 import com.authplayground.api.dto.response.TokenResponse;
 import com.authplayground.global.config.TokenConfig;
@@ -35,22 +36,24 @@ public class JwtProviderService {
 	private final TokenConfig tokenConfig;
 	private final TokenRepository tokenRepository;
 
-	public String generateAccessToken(String email, String nickname) {
-		final Date issuedDate = new Date();
-		final Date expiredDate = new Date();
-
-		return buildJwt(issuedDate, expiredDate)
-			.claim(MEMBER_EMAIL, email)
-			.claim(MEMBER_NICKNAME, nickname)
-			.compact();
-	}
-
-	public String generateRefreshToken(String email) {
+	public String generateAccessToken(String email, String nickname, Role role) {
 		final Date issuedDate = new Date();
 		final Date expiredDate = new Date(issuedDate.getTime() + tokenConfig.getRefreshTokenExpire());
 
 		return buildJwt(issuedDate, expiredDate)
 			.claim(MEMBER_EMAIL, email)
+			.claim(MEMBER_NICKNAME, nickname)
+			.claim(MEMBER_ROLE, role.name())
+			.compact();
+	}
+
+	public String generateRefreshToken(String email, Role role) {
+		final Date issuedDate = new Date();
+		final Date expiredDate = new Date(issuedDate.getTime() + tokenConfig.getRefreshTokenExpire());
+
+		return buildJwt(issuedDate, expiredDate)
+			.claim(MEMBER_EMAIL, email)
+			.claim(MEMBER_ROLE, role.name())
 			.compact();
 	}
 
@@ -59,14 +62,15 @@ public class JwtProviderService {
 		final Claims claims = parseClaimsByToken(refreshToken);
 		final String memberEmail = claims.get(MEMBER_EMAIL, String.class);
 		final String memberNickname = claims.get(MEMBER_NICKNAME, String.class);
+		final Role memberRole = Role.valueOf(claims.get(MEMBER_ROLE, String.class));
 
 		LoginResponse loginResponse = tokenRepository.getTokenSaveValue(memberEmail);
 		validateLoginResponse(loginResponse);
 
 		validateRefreshToken(refreshToken, loginResponse.refreshToken());
 
-		final String newAccessToken = generateAccessToken(memberEmail, memberNickname);
-		final String newRefreshToken = generateRefreshToken(memberEmail);
+		final String newAccessToken = generateAccessToken(memberEmail, memberNickname, memberRole);
+		final String newRefreshToken = generateRefreshToken(memberEmail, memberRole);
 
 		tokenRepository.saveToken(memberEmail, new TokenResponse(newRefreshToken));
 
@@ -92,8 +96,9 @@ public class JwtProviderService {
 		final Claims claims = parseClaimsByToken(accessToken);
 		final String memberEmail = claims.get(MEMBER_EMAIL, String.class);
 		final String memberNickname = claims.get(MEMBER_NICKNAME, String.class);
+		final Role memberRole = Role.valueOf(claims.get(MEMBER_ROLE, String.class));
 
-		return AuthMember.createAuthMember(memberEmail, memberNickname);
+		return AuthMember.createAuthMember(memberEmail, memberNickname, memberRole);
 	}
 
 	public boolean isUsable(String token) {
