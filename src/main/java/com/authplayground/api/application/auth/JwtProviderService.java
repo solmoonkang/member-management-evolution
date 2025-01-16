@@ -1,7 +1,7 @@
 package com.authplayground.api.application.auth;
 
-import static com.authplayground.global.error.model.ErrorMessage.*;
 import static com.authplayground.global.common.util.GlobalConstant.*;
+import static com.authplayground.global.error.model.ErrorMessage.*;
 
 import java.util.Date;
 
@@ -11,12 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.authplayground.api.domain.auth.AuthMember;
 import com.authplayground.api.domain.auth.repository.TokenRepository;
 import com.authplayground.api.domain.member.Role;
-import com.authplayground.api.dto.response.LoginResponse;
 import com.authplayground.api.dto.response.TokenResponse;
+import com.authplayground.global.common.util.CookieUtil;
 import com.authplayground.global.config.TokenConfig;
 import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.global.error.exception.UnauthorizedException;
-import com.authplayground.global.common.util.CookieUtil;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -64,10 +63,10 @@ public class JwtProviderService {
 		final String memberNickname = claims.get(MEMBER_NICKNAME, String.class);
 		final Role memberRole = Role.valueOf(claims.get(MEMBER_ROLE, String.class));
 
-		LoginResponse loginResponse = tokenRepository.getTokenSaveValue(memberEmail);
-		validateLoginResponse(loginResponse);
+		TokenResponse tokenResponse = tokenRepository.getTokenSaveValue(memberEmail);
+		validateTokenResponse(tokenResponse);
 
-		validateRefreshToken(refreshToken, loginResponse.refreshToken());
+		validateRefreshToken(refreshToken, tokenResponse.refreshToken());
 
 		final String newAccessToken = generateAccessToken(memberEmail, memberNickname, memberRole);
 		final String newRefreshToken = generateRefreshToken(memberEmail, memberRole);
@@ -145,8 +144,8 @@ public class JwtProviderService {
 		}
 	}
 
-	private void validateLoginResponse(LoginResponse loginResponse) {
-		if (loginResponse == null || loginResponse.refreshToken() == null) {
+	private void validateTokenResponse(TokenResponse tokenResponse) {
+		if (tokenResponse == null || tokenResponse.refreshToken() == null) {
 			throw new UnauthorizedException(FAILED_UNAUTHORIZED_MEMBER);
 		}
 	}
