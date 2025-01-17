@@ -70,7 +70,6 @@ public class JwtProviderService {
 
 		final String newAccessToken = generateAccessToken(memberEmail, memberNickname, memberRole);
 		final String newRefreshToken = generateRefreshToken(memberEmail, memberRole);
-
 		tokenRepository.saveToken(memberEmail, new TokenResponse(newRefreshToken));
 
 		httpServletResponse.setHeader(ACCESS_TOKEN_HEADER, newAccessToken);
@@ -82,6 +81,10 @@ public class JwtProviderService {
 	}
 
 	public String extractToken(String header, HttpServletRequest httpServletRequest) {
+		if (!isAuthenticationRequired(httpServletRequest.getRequestURI())) {
+			return null;
+		}
+
 		final String token = httpServletRequest.getHeader(header);
 
 		if (token == null || !token.startsWith(BEARER)) {
@@ -89,6 +92,10 @@ public class JwtProviderService {
 			return null;
 		}
 		return token.replaceFirst(BEARER, "").trim();
+	}
+
+	public boolean isAuthenticationRequired(String requestURI) {
+		return !(requestURI.equals(SIGNUP_URI) || requestURI.equals(LOGIN_URI));
 	}
 
 	public AuthMember extractAuthMemberByAccessToken(String accessToken) {
