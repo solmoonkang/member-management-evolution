@@ -26,9 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AuthenticationFilter extends OncePerRequestFilter {
 
-	private static final String SIGNUP_URI = "/api/signup";
-	private static final String LOGIN_URI = "/api/login";
-
 	protected final JwtProviderService jwtProviderService;
 	protected final HandlerExceptionResolver handlerExceptionResolver;
 
@@ -39,10 +36,10 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 		@NotNull FilterChain filterChain) {
 		String accessToken = jwtProviderService.extractToken(ACCESS_TOKEN_HEADER, httpServletRequest);
 		String refreshToken = extractRefreshTokenFromCookies(httpServletRequest);
-		String URI = httpServletRequest.getRequestURI();
+		String requestURI = httpServletRequest.getRequestURI();
 
 		try {
-			if (URI.equals(SIGNUP_URI) || URI.equals(LOGIN_URI)) {
+			if (!jwtProviderService.isAuthenticationRequired(requestURI)) {
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
 				return;
 			}
