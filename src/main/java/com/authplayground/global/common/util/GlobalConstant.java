@@ -18,4 +18,8 @@ public class GlobalConstant {
 	// 액세스 토큰 & 리프레시 토큰 헤더 및 쿠키 상수
 	public static final String ACCESS_TOKEN_HEADER = "Authorization";
 	public static final String REFRESH_TOKEN_COOKIE = "Authorization_RefreshToken";
+
+	// 회원가입 및 로그인 URI
+	public static final String SIGNUP_URI = "/api/signup";
+	public static final String LOGIN_URI = "/api/login";
 }
