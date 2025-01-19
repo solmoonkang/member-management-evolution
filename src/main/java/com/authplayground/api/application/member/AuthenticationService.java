@@ -50,7 +50,7 @@ public class AuthenticationService {
 
 		final String accessToken = jwtProviderService.generateAccessToken(member.getEmail(), member.getNickname(), member.getRole());
 		final String refreshToken = jwtProviderService.generateRefreshToken(member.getEmail(), member.getRole());
-		tokenRepository.saveToken(member.getEmail(), TokenResponse.builder().refreshToken(refreshToken).build());
+		tokenRepository.saveToken(member.getEmail(), new TokenResponse(refreshToken));
 
 		httpServletResponse.setHeader(ACCESS_TOKEN_HEADER, accessToken);
 		addRefreshTokenCookie(refreshToken, httpServletResponse);
