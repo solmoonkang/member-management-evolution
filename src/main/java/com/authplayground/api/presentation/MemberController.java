@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.authplayground.api.application.MemberService;
+import com.authplayground.api.application.member.MemberService;
 import com.authplayground.api.domain.auth.AuthMember;
 import com.authplayground.api.dto.response.MemberInfoResponse;
 

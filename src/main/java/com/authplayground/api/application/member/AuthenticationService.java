@@ -1,4 +1,4 @@
-package com.authplayground.api.application;
+package com.authplayground.api.application.member;
 
 import static com.authplayground.global.common.util.GlobalConstant.*;
 import static com.authplayground.global.error.model.ErrorMessage.*;

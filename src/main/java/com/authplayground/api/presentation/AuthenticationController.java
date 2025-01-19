@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.authplayground.api.application.AuthenticationService;
+import com.authplayground.api.application.member.AuthenticationService;
 import com.authplayground.api.dto.request.LoginRequest;
 import com.authplayground.api.dto.response.LoginResponse;
 import com.authplayground.api.dto.request.SignUpRequest;
