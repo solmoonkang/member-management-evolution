@@ -7,4 +7,6 @@ import lombok.NoArgsConstructor;
 public class RedisConstant {
 
 	public static final String REDIS_REFRESH_TOKEN_PREFIX = "refreshToken";
+
+	public static final int EXPIRE_DAYS = 14;
 }
