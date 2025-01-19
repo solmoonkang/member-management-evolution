@@ -37,7 +37,7 @@ public class JwtProviderService {
 
 	public String generateAccessToken(String email, String nickname, Role role) {
 		final Date issuedDate = new Date();
-		final Date expiredDate = new Date(issuedDate.getTime() + tokenConfig.getRefreshTokenExpire());
+		final Date expiredDate = new Date(issuedDate.getTime() + tokenConfig.getAccessTokenExpire());
 
 		return buildJwt(issuedDate, expiredDate)
 			.claim(MEMBER_EMAIL, email)
