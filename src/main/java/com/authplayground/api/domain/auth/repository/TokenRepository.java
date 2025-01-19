@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenRepository {
 
-	private static final int EXPIRE_DAYS = 14;
-
 	private final HashRedisRepository hashRedisRepository;
 
 	public void saveToken(String email, TokenResponse tokenResponse) {
