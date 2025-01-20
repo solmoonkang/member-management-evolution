@@ -22,7 +22,7 @@ public class TokenRepository {
 	}
 
 	public TokenResponse getTokenSaveValue(String email) {
-		return (TokenResponse)hashRedisRepository.get(REDIS_REFRESH_TOKEN_PREFIX + email);
+		return hashRedisRepository.get(REDIS_REFRESH_TOKEN_PREFIX + email, TokenResponse.class);
 	}
 
 	public void deleteToken(String email) {
