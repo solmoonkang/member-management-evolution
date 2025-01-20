@@ -8,7 +8,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.hash.Jackson2HashMapper;
 import org.springframework.stereotype.Repository;
 
-import com.authplayground.api.dto.response.TokenResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
 public class HashRedisRepository {
@@ -26,12 +26,17 @@ public class HashRedisRepository {
 		redisTemplate.expire(key, timeout);
 	}
 
-	public Object get(String key) {
-		final Map<String, Object> memberTokenMap = hashOperations.entries(key);
-		return TokenResponse.createTokenFromMap(memberTokenMap);
+	public <T> T get(String key, Class<T> clazz) {
+		final Map<String, Object> memberDataMap = hashOperations.entries(key);
+		return createObjectFromMap(memberDataMap, clazz);
 	}
 
 	public void delete(String key) {
 		redisTemplate.delete(key);
+	}
+
+	private <T> T createObjectFromMap(Map<String, Object> dataMap, Class<T> clazz) {
+		ObjectMapper objectMapper = new ObjectMapper();
+		return objectMapper.convertValue(dataMap, clazz);
 	}
 }
