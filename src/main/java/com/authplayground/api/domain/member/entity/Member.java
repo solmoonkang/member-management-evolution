@@ -1,6 +1,9 @@
-package com.authplayground.api.domain.entity;
+package com.authplayground.api.domain.member.entity;
 
-import com.authplayground.api.domain.model.Role;
+import static java.util.Objects.*;
+
+import com.authplayground.api.domain.member.model.Role;
+import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.global.common.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
@@ -32,6 +35,9 @@ public class Member extends BaseTimeEntity {
 	@Column(name = "password", nullable = false, unique = true)
 	private String password;
 
+	@Column(name = "nickname", nullable = false)
+	private String nickname;
+
 	@Column(name = "registration_number", nullable = false, unique = true)
 	private String registrationNumber;
 
@@ -42,11 +48,23 @@ public class Member extends BaseTimeEntity {
 	@Column(name = "role", nullable = false)
 	private Role role;
 
-	private Member(String email, String password, String address, Role role, String registrationNumber) {
+	private Member(String email, String password, String nickname, String registrationNumber, String address, Role role) {
 		this.email = email;
 		this.password = password;
+		this.nickname = nickname;
+		this.registrationNumber = registrationNumber;
 		this.address = address;
 		this.role = role;
-		this.registrationNumber = registrationNumber;
+	}
+
+	public static Member createMember(SignUpRequest signUpRequest, String password, String registrationNumber) {
+		return new Member(
+			requireNonNull(signUpRequest.email()),
+			requireNonNull(password),
+			requireNonNull(signUpRequest.nickname()),
+			requireNonNull(registrationNumber),
+			requireNonNull(signUpRequest.address()),
+			Role.MEMBER
+		);
 	}
 }
