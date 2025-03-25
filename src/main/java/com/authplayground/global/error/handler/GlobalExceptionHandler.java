@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
 	protected ErrorResponse handleException() {
 		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 알 수 없는 에러");
 
-		return new ErrorResponse(FAILED_UNKNOWN_ERROR.getMessage(), null);
+		return new ErrorResponse(UNKNOWN_SERVER_ERROR.getMessage(), null);
 	}
 
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
