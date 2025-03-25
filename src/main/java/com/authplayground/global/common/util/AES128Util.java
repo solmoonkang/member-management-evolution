@@ -40,7 +40,7 @@ public class AES128Util {
 			secretKeySpec = new SecretKeySpec(secretKey.getBytes(UTF_8), ALGORITHM);
 		} catch (Exception e) {
 			log.error("[✅ LOGGER] AES 초기화 중 예외가 발생했습니다.", e);
-			throw new AuthPlaygroundException(FAILED_AES_INIT_FAILURE.getMessage());
+			throw new AuthPlaygroundException(AES_INIT_FAILURE.getMessage());
 		}
 	}
 
@@ -60,7 +60,7 @@ public class AES128Util {
 			return Base64.getEncoder().encodeToString(encryptedWithIv);
 		} catch (Exception e) {
 			log.error("[✅ LOGGER] AES 암호화 중 오류가 발생했습니다.", e);
-			throw new AuthPlaygroundException(FAILED_AES_ENCRYPT_FAILURE.getMessage());
+			throw new AuthPlaygroundException(AES_ENCRYPTION_FAILURE.getMessage());
 		}
 	}
 
@@ -79,7 +79,7 @@ public class AES128Util {
 			return new String(decrypted, UTF_8);
 		} catch (Exception e) {
 			log.error("[✅ LOGGER] AES 복호화 중 오류가 발생했습니다.", e);
-			throw new AuthPlaygroundException(FAILED_AES_DECRYPT_FAILURE.getMessage());
+			throw new AuthPlaygroundException(AES_DECRYPTION_FAILURE.getMessage());
 		}
 	}
 
