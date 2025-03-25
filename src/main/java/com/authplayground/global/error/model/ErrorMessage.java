@@ -8,9 +8,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum ErrorMessage {
 
-	FAILED_AES_INIT_FAILURE("[❎ ERROR] AES 초기화 중 예외가 발생했습니다."),
-	FAILED_AES_ENCRYPT_FAILURE("[❎ ERROR] AES 암호화 중 예외가 발생했습니다."),
-	FAILED_AES_DECRYPT_FAILURE("[❎ ERROR] AES 복호화 중 예외가 발생했습니다.");
+	// 400 Bad Request
+	PASSWORD_MISMATCH_FAILURE("[❎ ERROR] 비밀번호가 일치하지 않습니다."),
+
+	// 401 Unauthorized
+	UNAUTHORIZED_REQUEST("[❎ ERROR] 로그인이 필요한 요청입니다."),
+
+	// 404 Not Found
+	MEMBER_NOT_FOUND_FAILURE("[❎ ERROR] 해당 회원을 찾을 수 없습니다."),
+
+	// 409 Conflict
+	DUPLICATED_EMAIL_FAILURE("[❎ ERROR] 이미 존재하는 사용자 이메일입니다."),
+	DUPLICATED_REGISTRATION_NUMBER_FAILURE("[❎ ERROR] 이미 존재하는 사용자 주민번호입니다."),
+
+	// 500 Internal Server Error
+	AES_INIT_FAILURE("[❎ ERROR] AES 초기화 중 예외가 발생했습니다."),
+	AES_ENCRYPTION_FAILURE("[❎ ERROR] AES 암호화 중 예외가 발생했습니다."),
+	AES_DECRYPTION_FAILURE("[❎ ERROR] AES 복호화 중 예외가 발생했습니다."),
+	UNKNOWN_SERVER_ERROR("[❎ ERROR] 서버에서 알 수 없는 에러가 발생했습니다.");
 
 	private final String message;
 }
