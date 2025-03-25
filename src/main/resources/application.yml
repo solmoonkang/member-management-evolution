@@ -1,9 +1,3 @@
-jwt:
-  iss: auth-playground
-  secret-access-key: 64461f01e1af406da538b9c48d801ce59142452199ff112fb5404c8e7e98e3ff
-  access-token-expire: 300_000
-  refresh-token-expire: 604_800_000
-
 spring:
   application:
     name: auth-playground
@@ -11,10 +5,10 @@ spring:
   h2:
     console:
       enabled: true
-
+      path: /h2-console
   datasource:
     driver-class-name: org.h2.Driver
-    url: jdbc:h2:tcp://localhost/~/auth-playground
+    url: jdbc:h2:mem:testdb
     username: sa
     password:
 
