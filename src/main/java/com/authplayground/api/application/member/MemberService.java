@@ -3,8 +3,10 @@ package com.authplayground.api.application.member;
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +15,13 @@ import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.api.dto.member.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.global.common.util.AES128Util;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
 import com.authplayground.global.error.exception.NotFoundException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,6 +38,7 @@ public class MemberService {
 		final String encodedRegistrationNumber = aes128Util.encryptText(signUpRequest.registrationNumber());
 
 		validateMemeberEmailDuplication(signUpRequest.email());
+		validateMemberNicknameDuplication(signUpRequest.nickname());
 		validateMemberRegistrationNumberDuplication(encodedRegistrationNumber);
 		validatePasswordConfirmationMatch(signUpRequest.password(), signUpRequest.passwordCheck());
 
@@ -43,16 +48,33 @@ public class MemberService {
 		memberRepository.save(member);
 	}
 
-	public void loginMember(LoginRequest loginRequest) {
+	@Transactional
+	public void loginMember(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
 		final Member member = memberRepository.findMemberByEmail(loginRequest.email())
-				.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
 
 		validatePasswordMatches(loginRequest.password(), member.getPassword());
 
 		CustomUserDetails userDetails = new CustomUserDetails(member);
-		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+		UsernamePasswordAuthenticationToken authentication =
+			new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-		SecurityContextHolder.getContext().setAuthentication(authentication);
+		SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+		securityContext.setAuthentication(authentication);
+		SecurityContextHolder.setContext(securityContext);
+
+		httpServletRequest.getSession(true).setAttribute(
+			HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
+	}
+
+	@Transactional
+	public void updateMember(Long memberId, UpdateRequest updateRequest) {
+		final Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+
+		validateMemberNicknameDuplication(updateRequest.nickname());
+
+		member.updateMember(updateRequest);
 	}
 
 	private void validatePasswordMatches(String rawPassword, String encodedPassword) {
@@ -64,6 +86,12 @@ public class MemberService {
 	private void validateMemeberEmailDuplication(String email) {
 		if (memberRepository.existsMemberByEmail(email)) {
 			throw new ConflictException(DUPLICATED_EMAIL_FAILURE);
+		}
+	}
+
+	private void validateMemberNicknameDuplication(String nickname) {
+		if (memberRepository.existsMemberByNickname(nickname)) {
+			throw new ConflictException(DUPLICATED_NICKNAME_FAILURE);
 		}
 	}
 
