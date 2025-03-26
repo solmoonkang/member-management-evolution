@@ -1,15 +1,20 @@
 package com.authplayground.api.presentation;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.authplayground.api.application.member.MemberService;
+import com.authplayground.api.domain.auth.CustomUserDetails;
 import com.authplayground.api.dto.member.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -27,8 +32,20 @@ public class MemberController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<String> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
-		memberService.loginMember(loginRequest);
+	public ResponseEntity<String> loginMember(
+		@RequestBody @Valid LoginRequest loginRequest,
+		HttpServletRequest httpServletRequest) {
+
+		memberService.loginMember(loginRequest, httpServletRequest);
 		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 인증을 성공적으로 완료했습니다.");
+	}
+
+	@PutMapping("/update")
+	public ResponseEntity<String> updateMember(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@RequestBody @Valid UpdateRequest updateRequest) {
+
+		memberService.updateMember(userDetails.member().getId(), updateRequest);
+		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 정보 수정을 성공적으로 완료했습니다.");
 	}
 }
