@@ -2,16 +2,21 @@ package com.authplayground.api.application.member;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.authplayground.api.domain.auth.CustomUserDetails;
 import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
+import com.authplayground.api.dto.member.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.global.common.util.AES128Util;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
+import com.authplayground.global.error.exception.NotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,12 +35,30 @@ public class MemberService {
 
 		validateMemeberEmailDuplication(signUpRequest.email());
 		validateMemberRegistrationNumberDuplication(encodedRegistrationNumber);
-		validatePasswordMatch(signUpRequest.password(), signUpRequest.passwordCheck());
+		validatePasswordConfirmationMatch(signUpRequest.password(), signUpRequest.passwordCheck());
 
 		final String encodedPassword = passwordEncoder.encode(signUpRequest.password());
 		final Member member = Member.createMember(signUpRequest, encodedPassword, encodedRegistrationNumber);
 
 		memberRepository.save(member);
+	}
+
+	public void loginMember(LoginRequest loginRequest) {
+		final Member member = memberRepository.findMemberByEmail(loginRequest.email())
+				.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+
+		validatePasswordMatches(loginRequest.password(), member.getPassword());
+
+		CustomUserDetails userDetails = new CustomUserDetails(member);
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+	}
+
+	private void validatePasswordMatches(String rawPassword, String encodedPassword) {
+		if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+			throw new BadRequestException(PASSWORD_MISMATCH_FAILURE);
+		}
 	}
 
 	private void validateMemeberEmailDuplication(String email) {
@@ -50,7 +73,7 @@ public class MemberService {
 		}
 	}
 
-	private void validatePasswordMatch(String password, String passwordCheck) {
+	private void validatePasswordConfirmationMatch(String password, String passwordCheck) {
 		if (!password.equals(passwordCheck)) {
 			throw new BadRequestException(PASSWORD_MISMATCH_FAILURE);
 		}
