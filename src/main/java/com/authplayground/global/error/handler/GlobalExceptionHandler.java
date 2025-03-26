@@ -25,8 +25,8 @@ public class GlobalExceptionHandler {
 
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(Exception.class)
-	protected ErrorResponse handleException() {
-		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 알 수 없는 에러");
+	protected ErrorResponse handleException(Exception exception) {
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 알 수 없는 에러", exception);
 
 		return new ErrorResponse(UNKNOWN_SERVER_ERROR.getMessage(), null);
 	}
@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(AuthPlaygroundException.class)
 	protected ErrorResponse handleAuthPlaygroundException(AuthPlaygroundException authPlaygroundException) {
-		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 서버 에러");
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 서버 에러", authPlaygroundException);
 
 		return new ErrorResponse(authPlaygroundException.getMessage(), null);
 	}
@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
 	@ResponseStatus(HttpStatus.CONFLICT)
 	@ExceptionHandler(ConflictException.class)
 	protected ErrorResponse handleConflictException(ConflictException conflictException) {
-		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 충돌 에러");
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 충돌 에러", conflictException);
 
 		return new ErrorResponse(conflictException.getMessage(), null);
 	}
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
 	@ResponseStatus(HttpStatus.NOT_FOUND)
 	@ExceptionHandler(NotFoundException.class)
 	protected ErrorResponse handleNotFoundException(NotFoundException notFoundException) {
-		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 리소스를 찾을 수 없는 에러");
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 리소스를 찾을 수 없는 에러", notFoundException);
 
 		return new ErrorResponse(notFoundException.getMessage(), null);
 	}
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ExceptionHandler(BadRequestException.class)
 	protected ErrorResponse handleException(BadRequestException badRequestException) {
-		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 잘못된 요청 에러");
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 잘못된 요청 에러", badRequestException);
 
 		return new ErrorResponse(badRequestException.getMessage(), null);
 	}
@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
 	@ResponseStatus(HttpStatus.UNAUTHORIZED)
 	@ExceptionHandler(UnauthorizedException.class)
 	protected ErrorResponse handleUnauthorizedException(UnauthorizedException unauthorizedException) {
-		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 인증되지 않은 사용자 접근 에러");
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 인증되지 않은 사용자 접근 에러", unauthorizedException);
 
 		return new ErrorResponse(unauthorizedException.getMessage(), null);
 	}
