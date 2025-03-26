@@ -9,13 +9,13 @@ import lombok.RequiredArgsConstructor;
 public enum ErrorMessage {
 
 	// 400 Bad Request
-	PASSWORD_MISMATCH_FAILURE("[❎ ERROR] 비밀번호가 일치하지 않습니다."),
+	PASSWORD_MISMATCH_FAILURE("[❎ ERROR] 입력하신 비밀번호가 일치하지 않습니다."),
 
 	// 401 Unauthorized
-	UNAUTHORIZED_REQUEST("[❎ ERROR] 로그인이 필요한 요청입니다."),
+	UNAUTHORIZED_REQUEST("[❎ ERROR] 인증되지 않은 사용자 요청입니다."),
 
 	// 404 Not Found
-	MEMBER_NOT_FOUND_FAILURE("[❎ ERROR] 해당 회원을 찾을 수 없습니다."),
+	MEMBER_NOT_FOUND_FAILURE("[❎ ERROR] 요청하신 회원을 찾을 수 없습니다."),
 
 	// 409 Conflict
 	DUPLICATED_EMAIL_FAILURE("[❎ ERROR] 이미 존재하는 사용자 이메일입니다."),
