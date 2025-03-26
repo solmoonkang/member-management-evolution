@@ -4,6 +4,7 @@ import static java.util.Objects.*;
 
 import com.authplayground.api.domain.member.model.Role;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.global.common.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
@@ -66,5 +67,10 @@ public class Member extends BaseTimeEntity {
 			requireNonNull(signUpRequest.address()),
 			Role.MEMBER
 		);
+	}
+
+	public void updateMember(UpdateRequest updateRequest) {
+		this.nickname = updateRequest.nickname();
+		this.address = updateRequest.address();
 	}
 }
