@@ -13,13 +13,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	@Override
 	public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 		AuthenticationException authenticationException) throws IOException {
+
+		log.warn("[✅ LOGGER] 인증되지 않은 사용자 요청입니다: {}", authenticationException.getMessage());
 
 		httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		httpServletResponse.setContentType("application/json;charset=UTF-8");
