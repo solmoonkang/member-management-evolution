@@ -9,9 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.authplayground.api.domain.member.entity.Member;
 
-import lombok.Getter;
-
-@Getter
 public record CustomUserDetails(Member member) implements UserDetails {
 
 	@Override
