@@ -22,9 +22,13 @@ import com.authplayground.api.domain.member.model.Role;
 public class SecurityConfig {
 
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+	private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-	public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+	public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+		CustomAccessDeniedHandler customAccessDeniedHandler) {
+
 		this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+		this.customAccessDeniedHandler = customAccessDeniedHandler;
 	}
 
 	@Bean
@@ -47,7 +51,9 @@ public class SecurityConfig {
 			.anyRequest().authenticated());
 
 		httpSecurity.exceptionHandling(exceptionHandling ->
-			exceptionHandling.authenticationEntryPoint(customAuthenticationEntryPoint));
+			exceptionHandling
+				.accessDeniedHandler(customAccessDeniedHandler)
+				.authenticationEntryPoint(customAuthenticationEntryPoint));
 
 		return httpSecurity.build();
 	}
