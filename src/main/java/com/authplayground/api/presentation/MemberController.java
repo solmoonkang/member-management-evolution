@@ -2,6 +2,7 @@ package com.authplayground.api.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,7 @@ import com.authplayground.api.domain.auth.CustomUserDetails;
 import com.authplayground.api.dto.member.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.api.dto.member.request.UpdateRequest;
+import com.authplayground.api.dto.member.response.MemberInfoResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -38,6 +40,11 @@ public class MemberController {
 
 		memberService.loginMember(loginRequest, httpServletRequest);
 		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 인증을 성공적으로 완료했습니다.");
+	}
+
+	@GetMapping
+	public ResponseEntity<MemberInfoResponse> findMemberInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		return ResponseEntity.ok().body(memberService.findMemberInfo(userDetails.member().getId()));
 	}
 
 	@PutMapping("/update")
