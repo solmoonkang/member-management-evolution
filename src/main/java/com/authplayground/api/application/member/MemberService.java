@@ -16,6 +16,7 @@ import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.api.dto.member.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.api.dto.member.request.UpdateRequest;
+import com.authplayground.api.dto.member.response.MemberInfoResponse;
 import com.authplayground.global.common.util.AES128Util;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
@@ -67,14 +68,24 @@ public class MemberService {
 			HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 	}
 
+	public MemberInfoResponse findMemberInfo(Long memberId) {
+		final Member member = getMemberById(memberId);
+
+		return new MemberInfoResponse(member.getEmail(), member.getNickname(), member.getAddress());
+	}
+
 	@Transactional
 	public void updateMember(Long memberId, UpdateRequest updateRequest) {
-		final Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+		final Member member = getMemberById(memberId);
 
 		validateMemberNicknameDuplication(updateRequest.nickname());
 
 		member.updateMember(updateRequest);
+	}
+
+	private Member getMemberById(Long memberId) {
+		return memberRepository.findById(memberId)
+			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
 	}
 
 	private void validatePasswordMatches(String rawPassword, String encodedPassword) {
