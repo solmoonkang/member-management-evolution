@@ -16,6 +16,7 @@ import com.authplayground.api.dto.member.request.LoginRequest;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.NotFoundException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -39,6 +40,11 @@ public class AuthenticationService {
 		Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
 
 		SecurityContextHolder.getContext().setAuthentication(authentication);
+	}
+
+	public void logoutMember(HttpServletRequest httpServletRequest) {
+		httpServletRequest.getSession(false).invalidate();
+		SecurityContextHolder.clearContext();
 	}
 
 	private void validatePasswordMatches(String rawPassword, String encodedPassword) {
