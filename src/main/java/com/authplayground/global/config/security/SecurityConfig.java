@@ -47,10 +47,13 @@ public class SecurityConfig {
 			.requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
 			.anyRequest().authenticated());
 
-		httpSecurity.exceptionHandling(exceptionHandling ->
-			exceptionHandling
+		httpSecurity.exceptionHandling(exceptionHandling -> exceptionHandling
 				.accessDeniedHandler(customAccessDeniedHandler)
 				.authenticationEntryPoint(customAuthenticationEntryPoint));
+
+		httpSecurity.sessionManagement(session -> session
+				.maximumSessions(1)
+				.maxSessionsPreventsLogin(true));
 
 		return httpSecurity.build();
 	}
