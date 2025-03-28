@@ -18,6 +18,7 @@ import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.api.dto.member.response.MemberInfoResponse;
 import com.authplayground.global.config.security.Auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +40,12 @@ public class MemberController {
 	public ResponseEntity<String> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
 		authenticationService.loginMember(loginRequest);
 		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 인증을 성공적으로 완료했습니다.");
+	}
+
+	@GetMapping("/logout")
+	public ResponseEntity<String> logoutMember(HttpServletRequest httpServletRequest) {
+		authenticationService.logoutMember(httpServletRequest);
+		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 로그아웃을 성공적으로 완료했습니다.");
 	}
 
 	@GetMapping("/members")
