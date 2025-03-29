@@ -23,7 +23,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 	public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 		AuthenticationException authenticationException) throws IOException {
 
-		log.warn("[✅ LOGGER] 인증되지 않은 사용자 요청입니다: {}", authenticationException.getMessage());
+		log.warn("[✅ LOGGER: AUTHENTICATION ENTRY POINT] 인증되지 않은 사용자 요청입니다: {}", authenticationException.getMessage());
 
 		httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		httpServletResponse.setContentType("application/json;charset=UTF-8");
