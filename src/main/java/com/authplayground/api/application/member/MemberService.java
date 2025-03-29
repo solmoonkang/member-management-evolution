@@ -2,11 +2,11 @@ package com.authplayground.api.application.member;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.authplayground.api.domain.auth.AuthMember;
 import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.api.dto.member.request.SignUpRequest;
@@ -43,28 +43,26 @@ public class MemberService {
 		memberRepository.save(member);
 	}
 
-	public MemberInfoResponse findMemberInfo(Long memberId) {
-		final Member member = getMemberById(memberId);
+	public MemberInfoResponse findMemberInfo(AuthMember authMember) {
+		final Member member = getMemberByEmail(authMember.email());
 		return new MemberInfoResponse(member.getEmail(), member.getNickname(), member.getAddress());
 	}
 
-	@PreAuthorize("hasRole('ADMIN') or #memberId == principal.member.id")
 	@Transactional
-	public void updateMember(Long memberId, UpdateRequest updateRequest) {
-		final Member member = getMemberById(memberId);
+	public void updateMember(AuthMember authMember, UpdateRequest updateRequest) {
+		final Member member = getMemberByEmail(authMember.email());
 		validateMemberNicknameDuplication(updateRequest.nickname());
 		member.updateMember(updateRequest);
 	}
 
-	@PreAuthorize("hasRole('ADMIN') or #memberId == principal.member.id")
 	@Transactional
-	public void deleteMember(Long memberId) {
-		final Member member = getMemberById(memberId);
+	public void deleteMember(AuthMember authMember) {
+		final Member member = getMemberByEmail(authMember.email());
 		memberRepository.delete(member);
 	}
 
-	private Member getMemberById(Long memberId) {
-		return memberRepository.findById(memberId)
+	private Member getMemberByEmail(String email) {
+		return memberRepository.findMemberByEmail(email)
 			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
 	}
 
