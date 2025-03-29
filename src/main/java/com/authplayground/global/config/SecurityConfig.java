@@ -1,20 +1,21 @@
-package com.authplayground.global.config.security;
+package com.authplayground.global.config;
 
 import static com.authplayground.global.common.util.AuthConstant.*;
 
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.authplayground.api.domain.member.model.Role;
+import com.authplayground.global.auth.handler.CustomAccessDeniedHandler;
+import com.authplayground.global.auth.handler.CustomAuthenticationEntryPoint;
 
 @Configuration
 public class SecurityConfig {
@@ -38,9 +39,10 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity
+		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
-			.httpBasic(AbstractHttpConfigurer::disable);
+			.httpBasic(AbstractHttpConfigurer::disable)
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
 		httpSecurity.authorizeHttpRequests(auth -> auth
 			.requestMatchers(PUBLIC_API_PATHS).permitAll()
@@ -51,23 +53,11 @@ public class SecurityConfig {
 			.accessDeniedHandler(customAccessDeniedHandler)
 			.authenticationEntryPoint(customAuthenticationEntryPoint));
 
-		httpSecurity.sessionManagement(session -> session
-			.sessionFixation().migrateSession()
-			.maximumSessions(1)
-			.maxSessionsPreventsLogin(true));
-
 		return httpSecurity.build();
 	}
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
-	}
-
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-		throws Exception {
-
-		return authenticationConfiguration.getAuthenticationManager();
 	}
 }
