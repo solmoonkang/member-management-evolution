@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.authplayground.global.config.security.AuthMemberArgumentResolver;
+import com.authplayground.global.auth.AuthMemberArgumentResolver;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {

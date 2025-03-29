@@ -1,4 +1,4 @@
-package com.authplayground.global.config.security;
+package com.authplayground.global.auth.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

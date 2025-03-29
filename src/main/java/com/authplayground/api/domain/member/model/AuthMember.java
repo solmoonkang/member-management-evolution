@@ -1,7 +1,6 @@
-package com.authplayground.api.domain.auth;
+package com.authplayground.api.domain.member.model;
 
 import com.authplayground.api.domain.member.entity.Member;
-import com.authplayground.api.domain.member.model.Role;
 
 public record AuthMember(Long id, String email, Role role) {
 

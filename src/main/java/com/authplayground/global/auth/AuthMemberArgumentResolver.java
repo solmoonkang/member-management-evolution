@@ -1,4 +1,4 @@
-package com.authplayground.global.config.security;
+package com.authplayground.global.auth;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
@@ -9,8 +9,9 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import com.authplayground.api.domain.auth.AuthMember;
+import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.domain.auth.CustomUserDetails;
+import com.authplayground.global.auth.annotation.Auth;
 
 @Component
 public class AuthMemberArgumentResolver implements HandlerMethodArgumentResolver {

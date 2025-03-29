@@ -1,11 +1,11 @@
-package com.authplayground.global.config.security;
+package com.authplayground.global.auth.handler;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
 import java.io.IOException;
 
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import com.authplayground.global.error.model.ErrorResponse;
@@ -17,19 +17,19 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
 	@Override
-	public void commence(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
-		AuthenticationException authenticationException) throws IOException {
+	public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+		AccessDeniedException accessDeniedException) throws IOException {
 
-		log.warn("[✅ LOGGER] 인증되지 않은 사용자 요청입니다: {}", authenticationException.getMessage());
+		log.warn("[✅ LOGGER] 권한이 없는 사용자가 접근했습니다: {}", accessDeniedException.getMessage());
 
-		httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
 		httpServletResponse.setContentType("application/json;charset=UTF-8");
 
 		ErrorResponse errorResponse = ErrorResponse.builder()
-			.message(UNAUTHORIZED_REQUEST.getMessage())
+			.message(NO_PERMISSION_FAILURE.getMessage())
 			.build();
 
 		ObjectMapper objectMapper = new ObjectMapper();
