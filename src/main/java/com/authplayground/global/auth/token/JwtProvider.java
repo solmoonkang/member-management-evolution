@@ -95,13 +95,16 @@ public class JwtProvider {
 
 			return true;
 		} catch (SecurityException | MalformedJwtException e) {
-			log.warn("[✅ LOGGER] 잘못된 JWT 서명입니다.", e);
+			log.warn("[✅ LOGGER: JWT PROVIDER] 잘못된 JWT 서명입니다.", e);
 		} catch (ExpiredJwtException e) {
-			log.warn("[✅ LOGGER] 만료된 JWT 토큰입니다.", e);
+			log.warn("[✅ LOGGER: JWT PROVIDER] 만료된 JWT 토큰입니다.", e);
 		} catch (UnsupportedJwtException e) {
-			log.warn("[✅ LOGGER] 지원하지 않는 JWT 토큰입니다.", e);
+			log.warn("[✅ LOGGER: JWT PROVIDER] 지원하지 않는 JWT 토큰입니다.", e);
 		} catch (IllegalArgumentException e) {
-			log.warn("[✅ LOGGER] 잘못된 JWT 토큰입니다.", e);
+			log.warn("[✅ LOGGER: JWT PROVIDER] 잘못된 JWT 토큰입니다.", e);
+		} catch (Exception e) {
+			log.warn("[✅ LOGGER: JWT PROVIDER] 유효하지 않은 JWT 토큰입니다.", e);
+			throw new UnauthorizedException(INVALID_AUTHORIZATION_HEADER);
 		}
 
 		return false;
