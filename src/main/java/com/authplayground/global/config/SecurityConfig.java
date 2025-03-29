@@ -1,6 +1,7 @@
 package com.authplayground.global.config;
 
 import static com.authplayground.global.common.util.AuthConstant.*;
+import static org.springframework.security.config.http.SessionCreationPolicy.*;
 
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -8,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -17,17 +17,18 @@ import com.authplayground.api.domain.member.model.Role;
 import com.authplayground.global.auth.handler.CustomAccessDeniedHandler;
 import com.authplayground.global.auth.handler.CustomAuthenticationEntryPoint;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 	private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
-	public SecurityConfig(CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-		CustomAccessDeniedHandler customAccessDeniedHandler) {
-
-		this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
-		this.customAccessDeniedHandler = customAccessDeniedHandler;
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 
 	@Bean
@@ -42,7 +43,7 @@ public class SecurityConfig {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+			.sessionManagement(session -> session.sessionCreationPolicy(STATELESS));
 
 		httpSecurity.authorizeHttpRequests(auth -> auth
 			.requestMatchers(PUBLIC_API_PATHS).permitAll()
@@ -54,10 +55,5 @@ public class SecurityConfig {
 			.authenticationEntryPoint(customAuthenticationEntryPoint));
 
 		return httpSecurity.build();
-	}
-
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
 	}
 }
