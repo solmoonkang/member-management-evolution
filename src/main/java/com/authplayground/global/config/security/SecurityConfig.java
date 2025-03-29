@@ -48,12 +48,13 @@ public class SecurityConfig {
 			.anyRequest().authenticated());
 
 		httpSecurity.exceptionHandling(exceptionHandling -> exceptionHandling
-				.accessDeniedHandler(customAccessDeniedHandler)
-				.authenticationEntryPoint(customAuthenticationEntryPoint));
+			.accessDeniedHandler(customAccessDeniedHandler)
+			.authenticationEntryPoint(customAuthenticationEntryPoint));
 
 		httpSecurity.sessionManagement(session -> session
-				.maximumSessions(1)
-				.maxSessionsPreventsLogin(true));
+			.sessionFixation().migrateSession()
+			.maximumSessions(1)
+			.maxSessionsPreventsLogin(true));
 
 		return httpSecurity.build();
 	}
