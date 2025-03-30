@@ -13,6 +13,9 @@ public enum ErrorMessage {
 
 	// 401 Unauthorized
 	UNAUTHORIZED_REQUEST("[❎ ERROR] 인증되지 않은 사용자 요청입니다."),
+	INVALID_AUTHORIZATION_HEADER("[❎ ERROR] 유효하지 않은 Authorization 헤더입니다."),
+	UNAUTHORIZED_REFRESH_TOKEN("[❎ ERROR] 유효하지 않은 리프레시 토큰입니다."),
+	MISMATCH_REFRESH_TOKEN("[❎ ERROR] 리프레시 토큰이 일치하지 않습니다."),
 
 	// 403 Forbidden
 	NO_PERMISSION_FAILURE("[❎ ERROR] 권한이 없는 사용자가 접근했습니다."),

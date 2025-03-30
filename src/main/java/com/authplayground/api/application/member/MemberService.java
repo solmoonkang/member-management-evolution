@@ -6,7 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.authplayground.api.domain.auth.AuthMember;
+import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.repository.MemberRepository;
 import com.authplayground.api.dto.member.request.SignUpRequest;

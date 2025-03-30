@@ -1,3 +1,9 @@
+jwt:
+  secret-key: your-secret-key-which-should-be-very-secure
+  issuer: auth.playground.com
+  access-token-expiration: 3_600_000            # 1시간 (1,000 * 60 * 60)
+  refresh-token-expiration: 1_209_600_000       # 14일  (1,000 * 60 * 60 * 24 * 14)
+
 spring:
   application:
     name: auth-playground

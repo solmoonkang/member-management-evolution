@@ -1,4 +1,4 @@
-package com.authplayground.global.config.security;
+package com.authplayground.global.auth.handler;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
@@ -23,7 +23,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 	public void handle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 		AccessDeniedException accessDeniedException) throws IOException {
 
-		log.warn("[✅ LOGGER] 권한이 없는 사용자가 접근했습니다: {}", accessDeniedException.getMessage());
+		log.warn("[✅ LOGGER: ACCESS DENIED HANDLER] 권한이 없는 사용자가 접근했습니다: {}", accessDeniedException.getMessage());
 
 		httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
 		httpServletResponse.setContentType("application/json;charset=UTF-8");

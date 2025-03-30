@@ -1,4 +1,4 @@
-package com.authplayground.api.dto.member.request;
+package com.authplayground.api.dto.auth.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
