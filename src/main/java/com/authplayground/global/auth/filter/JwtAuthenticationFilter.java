@@ -1,8 +1,11 @@
 package com.authplayground.global.auth.filter;
 
+import static com.authplayground.global.common.util.AuthConstant.*;
 import static com.authplayground.global.common.util.JwtConstant.*;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,6 +18,7 @@ import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.global.auth.token.JwtProvider;
 
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +28,23 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+	private static final Set<String> PERMIT_ALL_PATH_SET = Set.of(PUBLIC_API_PATHS);
+
 	private final JwtProvider jwtProvider;
 	private final HandlerExceptionResolver handlerExceptionResolver;
 
 	@Override
-	protected void doFilterInternal(HttpServletRequest httpServletRequest,
+	protected void doFilterInternal(
+		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse,
-		FilterChain filterChain) {
+		FilterChain filterChain) throws ServletException, IOException {
+
+		String URI = httpServletRequest.getRequestURI();
+
+		if (PERMIT_ALL_PATH_SET.contains(URI)) {
+			filterChain.doFilter(httpServletRequest, httpServletResponse);
+			return;
+		}
 
 		try {
 			final String accessToken = jwtProvider.extractToken(httpServletRequest, AUTHORIZATION_HEADER);
