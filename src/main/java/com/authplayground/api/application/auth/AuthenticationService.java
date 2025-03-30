@@ -1,5 +1,6 @@
 package com.authplayground.api.application.auth;
 
+import static com.authplayground.global.common.util.JwtConstant.*;
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +17,7 @@ import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.global.error.exception.UnauthorizedException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -32,10 +34,8 @@ public class AuthenticationService {
 
 		validatePasswordMatches(loginRequest.password(), member.getPassword());
 
-		final String accessToken = jwtProvider.generateAccessToken(
-			member.getEmail(), member.getNickname(), member.getRole());
-		final String refreshToken = jwtProvider.generateRefreshToken(
-			member.getEmail());
+		final String accessToken = generateAccessToken(member);
+		final String refreshToken = generateRefreshToken(member);
 
 		member.updateRefreshToken(refreshToken);
 
@@ -43,22 +43,18 @@ public class AuthenticationService {
 	}
 
 	@Transactional
-	public TokenResponse reissueToken(String refreshToken) {
-		if (!jwtProvider.validateToken(refreshToken)) {
-			throw new UnauthorizedException(UNAUTHORIZED_REFRESH_TOKEN);
-		}
+	public TokenResponse reissueToken(HttpServletRequest httpServletRequest) {
+		final String refreshToken = httpServletRequest.getHeader(REFRESH_TOKEN_HEADER);
+
+		validateRefreshTokenFormat(refreshToken);
 
 		final AuthMember authMember = jwtProvider.extractAuthMemberFromToken(refreshToken);
 		final Member member = getMemberByEmail(authMember.email());
 
-		if (!refreshToken.equals(member.getRefreshToken())) {
-			throw new UnauthorizedException(MISMATCH_REFRESH_TOKEN);
-		}
+		validateRefreshTokenMatches(refreshToken, member.getRefreshToken());
 
-		final String newAccessToken = jwtProvider.generateAccessToken(
-			member.getEmail(), member.getNickname(), member.getRole());
-		final String newRefreshToken = jwtProvider.generateRefreshToken(
-			member.getEmail());
+		final String newAccessToken = generateAccessToken(member);
+		final String newRefreshToken = generateRefreshToken(member);
 
 		member.updateRefreshToken(newRefreshToken);
 
@@ -70,9 +66,29 @@ public class AuthenticationService {
 			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
 	}
 
+	private String generateAccessToken(Member member) {
+		return jwtProvider.generateAccessToken(member.getEmail(), member.getNickname(), member.getRole());
+	}
+
+	private String generateRefreshToken(Member member) {
+		return jwtProvider.generateRefreshToken(member.getEmail());
+	}
+
 	private void validatePasswordMatches(String rawPassword, String encodedPassword) {
 		if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
 			throw new BadRequestException(PASSWORD_MISMATCH_FAILURE);
+		}
+	}
+
+	private void validateRefreshTokenFormat(String refreshToken) {
+		if (!jwtProvider.validateToken(refreshToken)) {
+			throw new UnauthorizedException(UNAUTHORIZED_REFRESH_TOKEN);
+		}
+	}
+
+	private void validateRefreshTokenMatches(String requestToken, String savedToken) {
+		if (!requestToken.equals(savedToken)) {
+			throw new UnauthorizedException(MISMATCH_REFRESH_TOKEN);
 		}
 	}
 }
