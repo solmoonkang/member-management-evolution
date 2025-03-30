@@ -11,12 +11,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.authplayground.api.application.auth.AuthenticationService;
 import com.authplayground.api.application.member.MemberService;
-import com.authplayground.api.domain.auth.AuthMember;
-import com.authplayground.api.dto.member.request.LoginRequest;
+import com.authplayground.api.domain.member.model.AuthMember;
+import com.authplayground.api.dto.auth.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.api.dto.member.response.MemberInfoResponse;
-import com.authplayground.global.config.security.Auth;
+import com.authplayground.api.dto.token.response.TokenResponse;
+import com.authplayground.global.auth.annotation.Auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -37,15 +38,13 @@ public class MemberController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<String> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
-		authenticationService.loginMember(loginRequest);
-		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 인증을 성공적으로 완료했습니다.");
+	public ResponseEntity<TokenResponse> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
+		return ResponseEntity.ok().body(authenticationService.loginMember(loginRequest));
 	}
 
-	@GetMapping("/logout")
-	public ResponseEntity<String> logoutMember(HttpServletRequest httpServletRequest) {
-		authenticationService.logoutMember(httpServletRequest);
-		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 로그아웃을 성공적으로 완료했습니다.");
+	@PostMapping("/reissue")
+	public ResponseEntity<TokenResponse> reissueToken(HttpServletRequest httpServletRequest) {
+		return ResponseEntity.ok().body(authenticationService.reissueToken(httpServletRequest));
 	}
 
 	@GetMapping("/members")
