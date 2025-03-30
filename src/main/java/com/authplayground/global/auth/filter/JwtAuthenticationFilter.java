@@ -2,8 +2,8 @@ package com.authplayground.global.auth.filter;
 
 import static com.authplayground.global.common.util.AuthConstant.*;
 import static com.authplayground.global.common.util.JwtConstant.*;
+import static com.authplayground.global.error.model.ErrorMessage.*;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -16,9 +16,9 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.global.auth.token.JwtProvider;
+import com.authplayground.global.error.exception.UnauthorizedException;
 
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -37,24 +37,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse,
-		FilterChain filterChain) throws ServletException, IOException {
+		FilterChain filterChain) {
 
-		String URI = httpServletRequest.getRequestURI();
-
-		if (PERMIT_ALL_PATH_SET.contains(URI)) {
-			filterChain.doFilter(httpServletRequest, httpServletResponse);
-			return;
-		}
+		final String permitURI = httpServletRequest.getRequestURI();
 
 		try {
+			if (PERMIT_ALL_PATH_SET.contains(permitURI)) {
+				filterChain.doFilter(httpServletRequest, httpServletResponse);
+				return;
+			}
+
 			final String accessToken = jwtProvider.extractToken(httpServletRequest, AUTHORIZATION_HEADER);
 
 			if (jwtProvider.validateToken(accessToken)) {
 				setAuthenticationContext(accessToken);
-				log.debug("[✅ LOGGER: JWT AUTHENTICATION FILTER] 인증 객체 등록이 완료되었습니다.");
+				filterChain.doFilter(httpServletRequest, httpServletResponse);
+				return;
 			}
 
-			filterChain.doFilter(httpServletRequest, httpServletResponse);
+			throw new UnauthorizedException(UNAUTHORIZED_REQUEST);
 		} catch (Exception e) {
 			log.warn("[✅ LOGGER: JWT AUTHENTICATION FILTER] 인증 실패 또는 토큰이 존재하지 않습니다: {}", e.getMessage());
 			handlerExceptionResolver.resolveException(httpServletRequest, httpServletResponse, null, e);
