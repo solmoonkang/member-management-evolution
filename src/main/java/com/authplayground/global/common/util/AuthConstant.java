@@ -14,6 +14,6 @@ public class AuthConstant {
 	};
 
 	public static final String[] PUBLIC_API_PATHS = {
-		"/api/signup", "/api/login"
+		"/api/signup", "/api/login", "/api/reissue"
 	};
 }
