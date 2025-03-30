@@ -12,10 +12,14 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.authplayground.api.domain.member.model.Role;
+import com.authplayground.global.auth.filter.JwtAuthenticationFilter;
 import com.authplayground.global.auth.handler.CustomAccessDeniedHandler;
 import com.authplayground.global.auth.handler.CustomAuthenticationEntryPoint;
+import com.authplayground.global.auth.token.JwtProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +27,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+	private final JwtProvider jwtProvider;
+	private final HandlerExceptionResolver handlerExceptionResolver;
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 	private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
@@ -49,6 +55,10 @@ public class SecurityConfig {
 			.requestMatchers(PUBLIC_API_PATHS).permitAll()
 			.requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
 			.anyRequest().authenticated());
+
+		httpSecurity.addFilterBefore(
+			new JwtAuthenticationFilter(jwtProvider, handlerExceptionResolver),
+			UsernamePasswordAuthenticationFilter.class);
 
 		httpSecurity.exceptionHandling(exceptionHandling -> exceptionHandling
 			.accessDeniedHandler(customAccessDeniedHandler)
