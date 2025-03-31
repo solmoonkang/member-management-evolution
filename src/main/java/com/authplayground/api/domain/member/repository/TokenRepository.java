@@ -1,8 +1,11 @@
 package com.authplayground.api.domain.member.repository;
 
+import static com.authplayground.global.common.util.JwtConstant.*;
+import static com.authplayground.global.common.util.RedisConstant.*;
+
 import org.springframework.stereotype.Repository;
 
-import com.authplayground.api.infrastructure.redis.StringRedisTokenRepository;
+import com.authplayground.api.infrastructure.redis.StringRedisValueRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -10,17 +13,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenRepository {
 
-	private final StringRedisTokenRepository stringRedisTokenRepository;
+	private final StringRedisValueRepository stringRedisValueRepository;
 
 	public void saveToken(String email, String refreshToken) {
-		stringRedisTokenRepository.save(email, refreshToken);
+		stringRedisValueRepository.save(generateRefreshTokenKey(email), refreshToken, REFRESH_TOKEN_EXPIRED);
 	}
 
 	public String findTokenByEmail(String email) {
-		return stringRedisTokenRepository.find(email);
+		return stringRedisValueRepository.find(generateRefreshTokenKey(email));
 	}
 
 	public void deleteTokenByEmail(String email) {
-		stringRedisTokenRepository.delete(email);
+		stringRedisValueRepository.delete(generateRefreshTokenKey(email));
+	}
+
+	private String generateRefreshTokenKey(String email) {
+		return REFRESH_TOKEN_KEY_PREFIX + email;
 	}
 }
