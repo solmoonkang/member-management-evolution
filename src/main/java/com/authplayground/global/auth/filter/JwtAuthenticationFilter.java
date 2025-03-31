@@ -16,6 +16,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.global.auth.token.JwtProvider;
+import com.authplayground.global.auth.validator.TokenValidator;
 import com.authplayground.global.error.exception.UnauthorizedException;
 
 import jakarta.servlet.FilterChain;
@@ -31,6 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private static final Set<String> PERMIT_ALL_PATH_SET = Set.of(PUBLIC_API_PATHS);
 
 	private final JwtProvider jwtProvider;
+	private final TokenValidator tokenValidator;
 	private final HandlerExceptionResolver handlerExceptionResolver;
 
 	@Override
@@ -39,9 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		HttpServletResponse httpServletResponse,
 		FilterChain filterChain) {
 
-		final String permitURI = httpServletRequest.getRequestURI();
-
 		try {
+			final String permitURI = httpServletRequest.getRequestURI();
+
 			if (PERMIT_ALL_PATH_SET.contains(permitURI)) {
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
 				return;
@@ -50,6 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			final String accessToken = jwtProvider.extractToken(httpServletRequest, AUTHORIZATION_HEADER);
 
 			if (jwtProvider.validateToken(accessToken)) {
+				tokenValidator.validateTokenNotBlacklisted(accessToken);
 				setAuthenticationContext(accessToken);
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
 				return;

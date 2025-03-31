@@ -110,6 +110,12 @@ public class JwtProvider {
 		return false;
 	}
 
+	public long getTokenRemainingTime(String token) {
+		Claims claims = parseClaims(token);
+		Date expirationTime = claims.getExpiration();
+		return expirationTime.getTime() - System.currentTimeMillis();
+	}
+
 	private String buildJwt(long expirationTime, Consumer<JwtBuilder> claimsConsumer) {
 		Date issuedDate = new Date();
 		Date expiryDate = new Date(issuedDate.getTime() + expirationTime);

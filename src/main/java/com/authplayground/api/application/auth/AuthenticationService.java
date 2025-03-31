@@ -1,21 +1,19 @@
 package com.authplayground.api.application.auth;
 
 import static com.authplayground.global.common.util.JwtConstant.*;
-import static com.authplayground.global.error.model.ErrorMessage.*;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.authplayground.api.application.auth.validator.AuthenticationValidator;
+import com.authplayground.api.application.member.MemberReadService;
 import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.model.AuthMember;
-import com.authplayground.api.domain.member.repository.MemberRepository;
+import com.authplayground.api.domain.member.repository.BlacklistRepository;
+import com.authplayground.api.domain.member.repository.TokenRepository;
 import com.authplayground.api.dto.auth.request.LoginRequest;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.token.JwtProvider;
-import com.authplayground.global.error.exception.BadRequestException;
-import com.authplayground.global.error.exception.NotFoundException;
-import com.authplayground.global.error.exception.UnauthorizedException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,46 +22,54 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthenticationService {
 
-	private final PasswordEncoder passwordEncoder;
 	private final JwtProvider jwtProvider;
-	private final MemberRepository memberRepository;
+	private final AuthenticationValidator authenticationValidator;
+	private final MemberReadService memberReadService;
+	private final TokenRepository tokenRepository;
+	private final BlacklistRepository blacklistRepository;
 
 	@Transactional
 	public TokenResponse loginMember(LoginRequest loginRequest) {
-		final Member member = getMemberByEmail(loginRequest.email());
+		final Member member = memberReadService.getMemberByEmail(loginRequest.email());
 
-		validatePasswordMatches(loginRequest.password(), member.getPassword());
+		authenticationValidator.validatePasswordMatches(loginRequest.password(), member.getPassword());
 
 		final String accessToken = generateAccessToken(member);
 		final String refreshToken = generateRefreshToken(member);
 
-		member.updateRefreshToken(refreshToken);
+		tokenRepository.saveToken(member.getEmail(), refreshToken);
 
 		return new TokenResponse(accessToken, refreshToken);
+	}
+
+	@Transactional
+	public void logoutMember(AuthMember authMember, HttpServletRequest httpServletRequest) {
+		final String accessToken = jwtProvider.extractToken(httpServletRequest, AUTHORIZATION_HEADER);
+		final long remaining = jwtProvider.getTokenRemainingTime(accessToken);
+
+		blacklistRepository.registerBlacklist(accessToken, remaining);
+		tokenRepository.deleteTokenByEmail(authMember.email());
 	}
 
 	@Transactional
 	public TokenResponse reissueToken(HttpServletRequest httpServletRequest) {
 		final String refreshToken = httpServletRequest.getHeader(REFRESH_TOKEN_HEADER);
 
-		validateRefreshTokenFormat(refreshToken);
+		authenticationValidator.validateRefreshTokenFormat(refreshToken);
 
 		final AuthMember authMember = jwtProvider.extractAuthMemberFromToken(refreshToken);
-		final Member member = getMemberByEmail(authMember.email());
+		final Member member = memberReadService.getMemberByEmail(authMember.email());
+		final String savedRefreshToken = tokenRepository.findTokenByEmail(member.getEmail());
 
-		validateRefreshTokenMatches(refreshToken, member.getRefreshToken());
+		authenticationValidator.validateRefreshTokenMatches(refreshToken, savedRefreshToken);
 
 		final String newAccessToken = generateAccessToken(member);
 		final String newRefreshToken = generateRefreshToken(member);
 
-		member.updateRefreshToken(newRefreshToken);
+		tokenRepository.deleteTokenByEmail(member.getEmail());
+		tokenRepository.saveToken(member.getEmail(), newRefreshToken);
 
 		return new TokenResponse(newAccessToken, newRefreshToken);
-	}
-
-	private Member getMemberByEmail(String email) {
-		return memberRepository.findMemberByEmail(email)
-			.orElseThrow(() -> new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
 	}
 
 	private String generateAccessToken(Member member) {
@@ -72,23 +78,5 @@ public class AuthenticationService {
 
 	private String generateRefreshToken(Member member) {
 		return jwtProvider.generateRefreshToken(member.getEmail());
-	}
-
-	private void validatePasswordMatches(String rawPassword, String encodedPassword) {
-		if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
-			throw new BadRequestException(PASSWORD_MISMATCH_FAILURE);
-		}
-	}
-
-	private void validateRefreshTokenFormat(String refreshToken) {
-		if (!jwtProvider.validateToken(refreshToken)) {
-			throw new UnauthorizedException(UNAUTHORIZED_REFRESH_TOKEN);
-		}
-	}
-
-	private void validateRefreshTokenMatches(String requestToken, String savedToken) {
-		if (!requestToken.equals(savedToken)) {
-			throw new UnauthorizedException(MISMATCH_REFRESH_TOKEN);
-		}
 	}
 }

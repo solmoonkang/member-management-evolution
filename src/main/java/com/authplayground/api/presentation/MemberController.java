@@ -9,26 +9,21 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.authplayground.api.application.auth.AuthenticationService;
 import com.authplayground.api.application.member.MemberService;
 import com.authplayground.api.domain.member.model.AuthMember;
-import com.authplayground.api.dto.auth.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.api.dto.member.response.MemberInfoResponse;
-import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.annotation.Auth;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/members")
 @RequiredArgsConstructor
 public class MemberController {
 
-	private final AuthenticationService authenticationService;
 	private final MemberService memberService;
 
 	@PostMapping("/signup")
@@ -37,22 +32,12 @@ public class MemberController {
 		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 정보를 성공적으로 생성했습니다.");
 	}
 
-	@PostMapping("/login")
-	public ResponseEntity<TokenResponse> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
-		return ResponseEntity.ok().body(authenticationService.loginMember(loginRequest));
-	}
-
-	@PostMapping("/reissue")
-	public ResponseEntity<TokenResponse> reissueToken(HttpServletRequest httpServletRequest) {
-		return ResponseEntity.ok().body(authenticationService.reissueToken(httpServletRequest));
-	}
-
-	@GetMapping("/members")
+	@GetMapping
 	public ResponseEntity<MemberInfoResponse> findMemberInfo(@Auth AuthMember authMember) {
 		return ResponseEntity.ok().body(memberService.findMemberInfo(authMember));
 	}
 
-	@PutMapping("/members")
+	@PutMapping
 	public ResponseEntity<String> updateMember(
 		@Auth AuthMember authMember,
 		@RequestBody @Valid UpdateRequest updateRequest) {
@@ -61,7 +46,7 @@ public class MemberController {
 		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 정보 수정을 성공적으로 완료했습니다.");
 	}
 
-	@DeleteMapping("/members")
+	@DeleteMapping
 	public ResponseEntity<String> deleteMember(@Auth AuthMember authMember) {
 		memberService.deleteMember(authMember);
 		return ResponseEntity.ok().body("[✅ SUCCESS] 사용자 정보 삭제를 성공적으로 완료했습니다.");
