@@ -12,6 +12,7 @@ import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.domain.member.repository.BlacklistRepository;
 import com.authplayground.api.domain.member.repository.TokenRepository;
 import com.authplayground.api.dto.auth.request.LoginRequest;
+import com.authplayground.api.dto.auth.response.LoginResponse;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.token.JwtProvider;
 
@@ -29,7 +30,7 @@ public class AuthenticationService {
 	private final BlacklistRepository blacklistRepository;
 
 	@Transactional
-	public TokenResponse loginMember(LoginRequest loginRequest) {
+	public LoginResponse loginMember(LoginRequest loginRequest) {
 		final Member member = memberReadService.getMemberByEmail(loginRequest.email());
 
 		authenticationValidator.validatePasswordMatches(loginRequest.password(), member.getPassword());
@@ -39,7 +40,7 @@ public class AuthenticationService {
 
 		tokenRepository.saveToken(member.getEmail(), refreshToken);
 
-		return new TokenResponse(accessToken, refreshToken);
+		return LoginResponse.of(member, accessToken, refreshToken);
 	}
 
 	@Transactional
