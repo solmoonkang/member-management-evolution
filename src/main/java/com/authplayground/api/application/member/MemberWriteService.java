@@ -18,8 +18,8 @@ public class MemberWriteService {
 	private final MemberRepository memberRepository;
 
 	public void createMember(SignUpRequest signUpRequest, String encodedRegNum) {
-		String encodedPassword = passwordEncoder.encode(signUpRequest.password());
-		Member member = Member.createMember(signUpRequest, encodedPassword, encodedRegNum);
+		final String encodedPassword = passwordEncoder.encode(signUpRequest.password());
+		final Member member = Member.createMember(signUpRequest, encodedPassword, encodedRegNum);
 		memberRepository.save(member);
 	}
 
