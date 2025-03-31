@@ -20,6 +20,7 @@ import com.authplayground.global.auth.filter.JwtAuthenticationFilter;
 import com.authplayground.global.auth.handler.CustomAccessDeniedHandler;
 import com.authplayground.global.auth.handler.CustomAuthenticationEntryPoint;
 import com.authplayground.global.auth.token.JwtProvider;
+import com.authplayground.global.auth.validator.TokenValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private final JwtProvider jwtProvider;
+	private final TokenValidator tokenValidator;
 	private final HandlerExceptionResolver handlerExceptionResolver;
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 	private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -57,7 +59,7 @@ public class SecurityConfig {
 			.anyRequest().authenticated());
 
 		httpSecurity.addFilterBefore(
-			new JwtAuthenticationFilter(jwtProvider, handlerExceptionResolver),
+			new JwtAuthenticationFilter(jwtProvider, tokenValidator, handlerExceptionResolver),
 			UsernamePasswordAuthenticationFilter.class);
 
 		httpSecurity.exceptionHandling(exceptionHandling -> exceptionHandling
