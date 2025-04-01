@@ -1,45 +1,59 @@
-# Auth-Playground 🙅🏻‍♂️
+## 🔓 Member-Management
 
-## 프로젝트 개요
+- **인증 시스템을 체계적으로 정리하고, 실제로 동작 가능한 수준까지 직접 설계 및 구현한 프로젝트입니다.**
+- **JWT 기반 인증의 단점을 보완하기 위해 Spring Security + JWT + Session을 병행하는 하이브리드 구조로 설계했습니다.**
 
-Auth-Playground는 로그인 및 회원가입 기능을 구현하기 위해 시작한 사이드 프로젝트입니다.
+### 개발 환경
 
-이전 구름톤 트레이닝에서 맡았던 회원 관리 파트를 다시 공부하고, 추가적으로 개선사항이나 부족한 부분을 보완하기 위한 목적으로 개발하고 있습니다.
+- **Language**: JAVA 17,
+- **Framework**: SpringBoot 3.4.4,
+- **ORM**: JPA
+- **Build-Tool**: Gradle,
+- **Dev-Tool**: IntelliJ IDEA,
+- **Test**: JUnit5,
+- **Database**: H2
 
-## 개발 환경
+### API 문서
 
-**Language**: JAVA 17, **Framework**: SpringBoot 3.3.4, **ORM**: JPA
+- **URL**: http://localhost:8080/swagger-ui/index.html
+- JWT 전역 인증 설정 + 요청 / 응답 스펙 명시
+- 예외 처리 명세 (ErrorResponse)도 Swagger에 명시
 
-<img src="https://img.shields.io/badge/java-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java"> <img src="https://img.shields.io/badge/spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Boot"> <img src="https://img.shields.io/badge/hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white" alt="JPA">
-<br>
+### 테스트
 
-**Build-Tool**: Gradle, **Dev-Tool**: IntelliJ IDEA, **Test**: JUnit5, **Database**: H2
+- JUnit5 기반 단위 테스트 + 통합 테스트 작성
+- 향후 컨트롤러, 인증 필터 레이어에 대한 통합 테스트 추가 예정
 
-<img src="https://img.shields.io/badge/gradle-02303A?style=for-the-badge&logo=gradle&logoColor=white" alt="Gradle"> <img src="https://img.shields.io/badge/intellij-000000?style=for-the-badge&logo=intellij-idea&logoColor=white" alt="IntelliJ IDEA"> <img src="https://img.shields.io/badge/junit5-25A162?style=for-the-badge&logo=junit5&logoColor=white" alt="JUnit 5"> <img src="https://img.shields.io/badge/h2-4CAF50?style=for-the-badge&logo=h2&logoColor=white" alt="H2">
+### 인증 흐름 설계
 
-## 구현 설명
+#### 1️⃣ 로그인
 
-1. **인증 및 인가 처리**
-    - 사용자 인증 및 인가를 위한 시스템을 구현합니다. 
-    - SpringSecurity + JWT + 세션을 활용하여 안전한 인증 절차를 마련하고, 권한에 따라 접근 제어를 설정합니다.
+- 로그인 성공 시 AccessToken + RefreshToken을 발급합니다.
+- 동시에 인증된 사용자 정보를 세션에도 저장합니다.
+- @Auth 어노테이션을 통해 AuthMember 객체를 자동으로 주입합니다.
 
-2. **회원가입 기능**
-    - 사용자가 회원가입을 통해 계정을 생성할 수 있도록 합니다. 입력된 정보를 검증하고, 안전한 비밀번호 저장을 위해 해싱 기법을 사용합니다.
+#### 2️⃣ 인증 요청 처리
 
-3. **로그인 기능**
-    - 사용자 인증을 위해 로그인 기능을 구현합니다. 로그인 요청 시 JWT를 발급하여 클라이언트 측에서 인증을 유지할 수 있도록 합니다.
+- 세션이 존재할 경우 세션에서 인증 정보를 주입합니다.
+- 세션이 없을 경우 JWT로 인증 및 SecurityContext에 주입합니다.
+- 이미 인증된 사용자는 중복 파싱 없이 바로 접근이 가능합니다.
 
-4. **테스트 코드**
-    - JUnit5를 사용하여 각 기능에 대한 단위 테스트를 작성하여 코드의 신뢰성을 높입니다.
+#### 3️⃣ 재발급
 
-## 요구 상세 및 구현 사항
+- 기존 RefreshToken이 Redis에 없거나 다를 경우 재사용으로 판단하여 차단합니다.
+- 재발급 시 기존 AccessToken은 블랙리스트에 등록하여 무효화합니다.
 
-- [ ] **API 구현**
-    - [ ] 회원가입 서비스 구현
-    - [ ] 로그인 서비스 구현
-- [ ] **확장**
-    - [ ] 스프링 시큐리티 통합
-    - [ ] JWT 기반 인증 구현
-    - [ ] JWT + Session 기반 인증 방식 도입
+#### 4️⃣ 로그아웃
 
-추가적으로 구현할 기능이나 개선 사항이 있다면 목록을 늘려나갈 계획입니다.
+- Redis에 저장된 RefreshToken을 삭제합니다.
+- 현재 AccessToken은 Blacklist에 등록합니다.
+- 세션 무효화 처리로 클라이언트 상태를 초기화합니다.
+
+### 기능 구성
+
+- [X] 로그인 / 로그아웃 / 토큰 재발급
+- [X] JWT 토큰 기반 인증 (Access + Refresh 분리)
+- [X] 세션 기반 인증 병행
+- [X] 토큰 블랙리스트 처리
+- [X] 1회성 리프레시 토큰 처리
+- [X] 세션 고정 공격 방지
