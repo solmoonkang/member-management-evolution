@@ -1,7 +1,5 @@
 package com.authplayground.api.application.auth;
 
-import static com.authplayground.global.common.util.JwtConstant.*;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,8 +10,10 @@ import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.domain.member.repository.BlacklistRepository;
 import com.authplayground.api.domain.member.repository.TokenRepository;
 import com.authplayground.api.dto.auth.request.LoginRequest;
+import com.authplayground.api.dto.auth.response.LoginResponse;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.token.JwtProvider;
+import com.authplayground.global.common.util.SessionManager;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +23,15 @@ import lombok.RequiredArgsConstructor;
 public class AuthenticationService {
 
 	private final JwtProvider jwtProvider;
+	private final SessionManager sessionManager;
 	private final AuthenticationValidator authenticationValidator;
+	private final AuthenticationTokenService authenticationTokenService;
 	private final MemberReadService memberReadService;
 	private final TokenRepository tokenRepository;
 	private final BlacklistRepository blacklistRepository;
 
 	@Transactional
-	public TokenResponse loginMember(LoginRequest loginRequest) {
+	public LoginResponse loginMember(LoginRequest loginRequest) {
 		final Member member = memberReadService.getMemberByEmail(loginRequest.email());
 
 		authenticationValidator.validatePasswordMatches(loginRequest.password(), member.getPassword());
@@ -39,34 +41,40 @@ public class AuthenticationService {
 
 		tokenRepository.saveToken(member.getEmail(), refreshToken);
 
-		return new TokenResponse(accessToken, refreshToken);
+		return LoginResponse.of(member, accessToken, refreshToken);
 	}
 
 	@Transactional
 	public void logoutMember(AuthMember authMember, HttpServletRequest httpServletRequest) {
-		final String accessToken = jwtProvider.extractToken(httpServletRequest, AUTHORIZATION_HEADER);
-		final long remaining = jwtProvider.getTokenRemainingTime(accessToken);
+		final String accessToken = authenticationTokenService.extractAccessToken(httpServletRequest);
+		final long remaining = authenticationTokenService.getRemainingAccessTokenTime(accessToken);
 
 		blacklistRepository.registerBlacklist(accessToken, remaining);
 		tokenRepository.deleteTokenByEmail(authMember.email());
+
+		sessionManager.expiredSession(httpServletRequest);
 	}
 
 	@Transactional
 	public TokenResponse reissueToken(HttpServletRequest httpServletRequest) {
-		final String refreshToken = httpServletRequest.getHeader(REFRESH_TOKEN_HEADER);
+		final String accessToken = authenticationTokenService.extractAccessToken(httpServletRequest);
+		final String refreshToken = authenticationTokenService.extractRefreshToken(httpServletRequest);
 
 		authenticationValidator.validateRefreshTokenFormat(refreshToken);
 
-		final AuthMember authMember = jwtProvider.extractAuthMemberFromToken(refreshToken);
+		final AuthMember authMember = authenticationTokenService.parseAuthMember(refreshToken);
+		final String storedRefreshToken = tokenRepository.findTokenByEmail(authMember.email());
+		final long remainingTokenTime = authenticationTokenService.getRemainingAccessTokenTime(accessToken);
+
+		authenticationValidator.validateRefreshTokenReused(storedRefreshToken, refreshToken);
+
+		blacklistRepository.registerBlacklist(accessToken, remainingTokenTime);
+		tokenRepository.deleteTokenByEmail(authMember.email());
+
 		final Member member = memberReadService.getMemberByEmail(authMember.email());
-		final String savedRefreshToken = tokenRepository.findTokenByEmail(member.getEmail());
-
-		authenticationValidator.validateRefreshTokenMatches(refreshToken, savedRefreshToken);
-
 		final String newAccessToken = generateAccessToken(member);
 		final String newRefreshToken = generateRefreshToken(member);
 
-		tokenRepository.deleteTokenByEmail(member.getEmail());
 		tokenRepository.saveToken(member.getEmail(), newRefreshToken);
 
 		return new TokenResponse(newAccessToken, newRefreshToken);

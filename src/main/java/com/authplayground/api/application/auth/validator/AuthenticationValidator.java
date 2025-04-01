@@ -30,9 +30,9 @@ public class AuthenticationValidator {
 		}
 	}
 
-	public void validateRefreshTokenMatches(String requestToken, String savedToken) {
-		if (!requestToken.equals(savedToken)) {
-			throw new UnauthorizedException(MISMATCH_REFRESH_TOKEN);
+	public void validateRefreshTokenReused(String storedToken, String providedToken) {
+		if (storedToken == null || !storedToken.equals(providedToken)) {
+			throw new UnauthorizedException(REUSED_REFRESH_TOKEN);
 		}
 	}
 }

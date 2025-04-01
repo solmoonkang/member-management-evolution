@@ -50,8 +50,10 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
-			.httpBasic(AbstractHttpConfigurer::disable)
-			.sessionManagement(session -> session.sessionCreationPolicy(STATELESS));
+			.httpBasic(AbstractHttpConfigurer::disable);
+
+		httpSecurity.sessionManagement(session -> session.sessionCreationPolicy(IF_REQUIRED)
+			.sessionFixation().migrateSession());
 
 		httpSecurity.authorizeHttpRequests(auth -> auth
 			.requestMatchers(PUBLIC_API_PATHS).permitAll()

@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.authplayground.api.application.auth.AuthenticationService;
 import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.dto.auth.request.LoginRequest;
+import com.authplayground.api.dto.auth.response.LoginResponse;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.annotation.Auth;
+import com.authplayground.global.common.util.SessionManager;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -21,11 +23,18 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthenticationController {
 
+	private final SessionManager sessionManager;
 	private final AuthenticationService authenticationService;
 
 	@PostMapping("/login")
-	public ResponseEntity<TokenResponse> loginMember(@RequestBody @Valid LoginRequest loginRequest) {
-		return ResponseEntity.ok().body(authenticationService.loginMember(loginRequest));
+	public ResponseEntity<TokenResponse> loginMember(
+		@RequestBody @Valid LoginRequest loginRequest,
+		HttpServletRequest httpServletRequest) {
+
+		LoginResponse loginResponse = authenticationService.loginMember(loginRequest);
+		sessionManager.saveAuthMember(httpServletRequest, loginResponse.authMember());
+
+		return ResponseEntity.ok().body(loginResponse.tokenResponse());
 	}
 
 	@PostMapping("/logout")
