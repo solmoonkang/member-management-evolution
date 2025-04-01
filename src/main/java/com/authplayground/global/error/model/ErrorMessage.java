@@ -17,6 +17,7 @@ public enum ErrorMessage {
 	BLACKLISTED_ACCESS_TOKEN("[❎ ERROR] 블랙리스트에 등록된 액세스 토큰입니다."),
 	UNAUTHORIZED_REFRESH_TOKEN("[❎ ERROR] 유효하지 않은 리프레시 토큰입니다."),
 	MISMATCH_REFRESH_TOKEN("[❎ ERROR] 리프레시 토큰이 일치하지 않습니다."),
+	REUSED_REFRESH_TOKEN("[❎ ERROR] 재사용된 리프레시 토큰 사용을 시도했습니다."),
 
 	// 403 Forbidden
 	NO_PERMISSION_FAILURE("[❎ ERROR] 권한이 없는 사용자가 접근했습니다."),
