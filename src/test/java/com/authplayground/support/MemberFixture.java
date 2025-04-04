@@ -1,6 +1,8 @@
 package com.authplayground.support;
 
 import com.authplayground.api.domain.member.entity.Member;
+import com.authplayground.api.domain.member.model.AuthMember;
+import com.authplayground.api.domain.member.model.Role;
 import com.authplayground.api.dto.member.request.SignUpRequest;
 
 public class MemberFixture {
@@ -24,5 +26,9 @@ public class MemberFixture {
 			.registrationNumber(REGISTRATION_NUMBER)
 			.address(ADDRESS)
 			.build();
+	}
+
+	public static AuthMember createAuthMember() {
+		return new AuthMember(EMAIL, NICKNAME, Role.MEMBER);
 	}
 }
