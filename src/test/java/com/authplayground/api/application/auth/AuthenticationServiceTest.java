@@ -16,10 +16,12 @@ import com.authplayground.api.application.auth.validator.AuthenticationValidator
 import com.authplayground.api.application.member.MemberReadService;
 import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.model.AuthMember;
+import com.authplayground.api.domain.member.model.Role;
 import com.authplayground.api.domain.member.repository.BlacklistRepository;
 import com.authplayground.api.domain.member.repository.TokenRepository;
 import com.authplayground.api.dto.auth.request.LoginRequest;
 import com.authplayground.api.dto.auth.response.LoginResponse;
+import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.token.JwtProvider;
 import com.authplayground.global.common.util.SessionManager;
 import com.authplayground.global.error.exception.NotFoundException;
@@ -76,8 +78,9 @@ class AuthenticationServiceTest {
 
 			when(memberReadService.getMemberByEmail(member.getEmail())).thenReturn(member);
 			doNothing().when(authenticationValidator).validatePasswordMatches(any(), any());
-			when(jwtProvider.generateAccessToken(any(), any(), any())).thenReturn(accessToken);
-			when(jwtProvider.generateRefreshToken(any())).thenReturn(refreshToken);
+			when(jwtProvider.generateAccessToken(any(String.class), any(String.class), any(Role.class)))
+				.thenReturn(accessToken);
+			when(jwtProvider.generateRefreshToken(any(String.class))).thenReturn(refreshToken);
 
 			// WHEN
 			LoginResponse loginResponse = authenticationService.loginMember(loginRequest);
@@ -114,7 +117,7 @@ class AuthenticationServiceTest {
 
 			when(memberReadService.getMemberByEmail(member.getEmail())).thenReturn(member);
 			doThrow(new UnauthorizedException(PASSWORD_MISMATCH_FAILURE))
-				.when(authenticationValidator).validatePasswordMatches(any(), any());
+				.when(authenticationValidator).validatePasswordMatches(any(String.class), any(String.class));
 
 			// WHEN & THEN
 			assertThatThrownBy(() -> authenticationService.loginMember(loginRequest))
@@ -133,7 +136,7 @@ class AuthenticationServiceTest {
 			// GIVEN
 			AuthMember authMember = JwtFixture.createAuthMember();
 			String accessToken = "accessToken";
-			long remainingTime = 123456L;
+			long remainingTime = 360000L;
 
 			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
 			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
@@ -170,7 +173,7 @@ class AuthenticationServiceTest {
 			// GIVEN
 			AuthMember authMember = JwtFixture.createAuthMember();
 			String accessToken = "accessToken";
-			long remainingTime = 123456L;
+			long remainingTime = 360000L;
 
 			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
 			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
@@ -180,6 +183,100 @@ class AuthenticationServiceTest {
 			assertThatThrownBy(() -> authenticationService.logoutMember(authMember, httpServletRequest))
 				.isInstanceOf(RuntimeException.class)
 				.hasMessageContaining("Delete failed");
+		}
+	}
+
+	@Nested
+	@DisplayName("reissueToken() 테스트: ")
+	class ReissueToken {
+
+		@Test
+		@DisplayName("[✅ SUCCESS] reissueToken - 액세스 토큰과 리프레시 토큰을 성공적으로 재발급 했습니다.")
+		void reissueToken_returnsTokenResponse_success() {
+			// GIVEN
+			String accessToken = "accessToken";
+			String refreshToken = "refreshToken";
+			String savedToken = "refreshToken";
+			long remainingTime = 360000L;
+
+			AuthMember authMember = JwtFixture.createAuthMember();
+			Member member = MemberFixture.createMember();
+
+			String newAccessToken = "newAccessToken";
+			String newRefreshToken = "newRefreshToken";
+
+			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
+			when(authenticationTokenService.extractRefreshToken(httpServletRequest)).thenReturn(refreshToken);
+
+			doNothing().when(authenticationValidator).validateRefreshTokenFormat(refreshToken);
+			when(authenticationTokenService.parseAuthMember(refreshToken)).thenReturn(authMember);
+			when(tokenRepository.findTokenByEmail(authMember.email())).thenReturn(savedToken);
+
+			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
+			doNothing().when(authenticationValidator).validateRefreshTokenReused(savedToken, refreshToken);
+
+			when(memberReadService.getMemberByEmail(authMember.email())).thenReturn(member);
+			when(jwtProvider.generateAccessToken(any(String.class), any(String.class), any(Role.class)))
+				.thenReturn(newAccessToken);
+			when(jwtProvider.generateRefreshToken(any(String.class)))
+				.thenReturn(newRefreshToken);
+
+			// WHEN
+			TokenResponse tokenResponse = authenticationService.reissueToken(httpServletRequest);
+
+			// THEN
+			assertThat(tokenResponse.accessToken()).isEqualTo(newAccessToken);
+			assertThat(tokenResponse.refreshToken()).isEqualTo(newRefreshToken);
+
+			verify(blacklistRepository).registerBlacklist(accessToken, remainingTime);
+			verify(tokenRepository).deleteTokenByEmail(authMember.email());
+			verify(tokenRepository).saveToken(eq(member.getEmail()), eq(newRefreshToken));
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] reissueToken - 리프레시 토큰 포맷이 잘못되어 재발급에 실패했습니다.")
+		void reissueToken_throwsUnauthorizedException_whenRefreshTokenFormatInvalid_failure() {
+			// GIVEN
+			String accessToken = "accessToken";
+			String refreshToken = "refreshToken";
+
+			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
+			when(authenticationTokenService.extractRefreshToken(httpServletRequest)).thenReturn(refreshToken);
+
+			doThrow(new UnauthorizedException(UNAUTHORIZED_REFRESH_TOKEN))
+				.when(authenticationValidator).validateRefreshTokenFormat(refreshToken);
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> authenticationService.reissueToken(httpServletRequest))
+				.isInstanceOf(UnauthorizedException.class)
+				.hasMessageContaining("[❎ ERROR] 유효하지 않은 리프레시 토큰입니다.");
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] reissueToken - 재사용된 리프레시 토큰으로 재발급에 실패했습니다.")
+		void reissueToken_throwsUnauthorizedException_whenRefreshTokenReused_failure() {
+			// GIVEN
+			String accessToken = "accessToken";
+			String refreshToken = "refreshToken";
+			String savedToken = "differentSavedToken";
+
+			AuthMember authMember = JwtFixture.createAuthMember();
+
+			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
+			when(authenticationTokenService.extractRefreshToken(httpServletRequest)).thenReturn(refreshToken);
+
+			doNothing().when(authenticationValidator).validateRefreshTokenFormat(refreshToken);
+
+			when(authenticationTokenService.parseAuthMember(any(String.class))).thenReturn(authMember);
+			when(tokenRepository.findTokenByEmail(any(String.class))).thenReturn(savedToken);
+
+			doThrow(new UnauthorizedException(REUSED_REFRESH_TOKEN))
+				.when(authenticationValidator).validateRefreshTokenReused(savedToken, refreshToken);
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> authenticationService.reissueToken(httpServletRequest))
+				.isInstanceOf(UnauthorizedException.class)
+				.hasMessageContaining("[❎ ERROR] 재사용된 리프레시 토큰 사용을 시도했습니다.");
 		}
 	}
 }
