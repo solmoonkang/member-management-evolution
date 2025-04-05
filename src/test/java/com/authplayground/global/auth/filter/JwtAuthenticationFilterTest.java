@@ -29,6 +29,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+@DisplayName("JwtAuthenticationFilter 단위 테스트")
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
@@ -59,8 +60,8 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	@DisplayName("[✅ SUCCESS] 인증된 요청은 SecurityContext에 Authentication을 설정합니다.")
-	void doFilterInternal_validAccessToken_setAuthentication_success() throws ServletException, IOException {
+	@DisplayName("[✅ SUCCESS] doFilterInternal - 인증된 요청은 SecurityContext에 Authentication을 설정합니다.")
+	void doFilterInternal_returnsAuthenticationInSecurityContext_success() throws ServletException, IOException {
 		// GIVEN
 		AuthMember authMember = JwtFixture.createAuthMember();
 
@@ -85,8 +86,8 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	@DisplayName("[❎ FAILURE] 토큰이 없거나 잘못된 경우 인증 예외를 발생시킵니다.")
-	void doFilterInternal_invalidToken_throwsException() {
+	@DisplayName("[❎ FAILURE] doFilterInternal - 토큰이 없거나 잘못된 경우 인증 예외를 발생시킵니다.")
+	void doFilterInternal_throwsUnauthorizedException_whenTokenMissingOrInvalid_failure() {
 		// GIVEN
 		when(httpServletRequest.getRequestURI()).thenReturn("/api/protected");
 		when(jwtProvider.extractToken(httpServletRequest, AUTHORIZATION_HEADER))

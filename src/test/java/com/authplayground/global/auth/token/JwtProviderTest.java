@@ -44,8 +44,8 @@ class JwtProviderTest {
 	JwtProvider jwtProvider;
 
 	@Test
-	@DisplayName("[✅ SUCCESS] 액세스 토큰을 생성하고 AuthMember를 통해 인증 정보를 추출할 수 있습니다.")
-	void generateAccessToken_token_success() {
+	@DisplayName("[✅ SUCCESS] generateAccessToken - 인증 정보를 포함한 토큰 생성 후 유효성을 확인합니다.")
+	void generateAccessToken_returnsToken_success() {
 		// WHEN
 		String accessToken = jwtProvider.generateAccessToken(EMAIL, NICKNAME, Role.MEMBER);
 		AuthMember authMember = jwtProvider.extractAuthMemberFromToken(accessToken);
@@ -69,8 +69,8 @@ class JwtProviderTest {
 	}
 
 	@Test
-	@DisplayName("[✅ SUCCESS] 리프레시 토큰을 생성하고 이메일을 추출할 수 있습니다.")
-	void generateRefreshToken_token_success() {
+	@DisplayName("[✅ SUCCESS] generateRefreshToken - 이메일만 포함된 토큰을 생성하고 Claims를 확인합니다.")
+	void generateRefreshToken_returnsToken_success() {
 		// WHEN
 		String refreshToken = jwtProvider.generateRefreshToken(EMAIL);
 
@@ -90,12 +90,12 @@ class JwtProviderTest {
 	}
 
 	@Nested
-	@DisplayName("extractAuthMemberFromToken 메서드: ")
+	@DisplayName("extractAuthMemberFromToken() 테스트: ")
 	class ExtractAuthMemberFromToken {
 
 		@Test
-		@DisplayName("[✅ SUCCESS] 액세스 토큰에서 AuthMember 정보를 정상적으로 추출할 수 있습니다.")
-		void extractAuthMemberFromToken_authMember_success() {
+		@DisplayName("[✅ SUCCESS] extractAuthMemberFromToken - 액세스 토큰에서 인증 정보를 추출합니다.")
+		void extractAuthMemberFromToken_returnsAuthMember_success() {
 			// GIVEN
 			String accessToken = jwtProvider.generateAccessToken(EMAIL, NICKNAME, Role.MEMBER);
 
@@ -109,8 +109,8 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] 리프레시 토큰에서 권한(Role) 정보가 없어 파싱에 실패합니다.")
-		void extractAuthMemberFromToken_roleNull_failure() {
+		@DisplayName("[❎ FAILURE] extractAuthMemberFromToken - 리프레시 토큰은 권한 정보가 없어 실패합니다.")
+		void extractAuthMemberFromToken_throwsNullPointerException_whenRefreshTokenDoesNotHaveRole_failure() {
 			// GIVEN
 			String refreshToken = jwtProvider.generateRefreshToken(EMAIL);
 
@@ -122,12 +122,12 @@ class JwtProviderTest {
 	}
 
 	@Nested
-	@DisplayName("extractToken 메서드: ")
+	@DisplayName("extractToken() 테스트: ")
 	class ExtractToken {
 
 		@Test
-		@DisplayName("[✅ SUCCESS] Bearer 접두사를 포함한 헤더에서 토큰을 추출합니다.")
-		void extractToken_success() {
+		@DisplayName("[✅ SUCCESS] extractToken - Bearer 접두사가 있는 헤더에서 토큰을 추출합니다.")
+		void extractToken_returnsToken_success() {
 			// GIVEN
 			String validToken = "valid-token";
 			MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
@@ -141,8 +141,8 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] 헤더에 토큰이 없으면 예외가 발생합니다.")
-		void extractToken_missingHeader_failure() {
+		@DisplayName("[❎ FAILURE] extractToken - 헤더가 없으면 예외가 발생합니다.")
+		void extractToken_throwsUnauthorizedException_whenHeaderIsMissing_failure() {
 			// GIVEN
 			MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
 
@@ -153,8 +153,8 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] Bearer 접두사가 없으면 예외가 발생합니다.")
-		void extractToken_invalidPrefix_failure() {
+		@DisplayName("[❎ FAILURE] extractToken - Bearer 접두사가 없으면 예외가 발생합니다.")
+		void extractToken_throwsUnauthorizedException_whenBearerPrefixMissing_failure() {
 			// GIVEN
 			String invalidToken = "TokenWithoutBearer";
 			MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
@@ -168,24 +168,25 @@ class JwtProviderTest {
 	}
 
 	@Nested
-	@DisplayName("validateToken 메서드: ")
+	@DisplayName("validateToken() 테스트")
 	class ValidateToken {
 
 		@Test
-		@DisplayName("[✅ SUCCESS] 유효한 토큰이면 true를 반환합니다.")
-		void validateToken_valid_success() {
+		@DisplayName("[✅ SUCCESS] validateToken - 유효한 토큰이면 true를 반환합니다.")
+		void validateToken_returnsTrue_success() {
 			// GIVEN
 			String token = jwtProvider.generateAccessToken(EMAIL, NICKNAME, Role.MEMBER);
 
 			// WHEN
+			boolean isValid = jwtProvider.validateToken(token);
 
 			// THEN
-			assertThat(jwtProvider.validateToken(token)).isTrue();
+			assertThat(isValid).isTrue();
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] 서명이 잘못된 토큰은 false를 반환합니다.")
-		void validateToken_invalidSignature_failure() {
+		@DisplayName("[❎ FAILURE] validateToken - 서명이 잘못된 토큰은 false를 반환합니다.")
+		void validateToken_throwsUnauthorizedException_whenSignatureInvalid_failure() {
 			// GIVEN
 			String token = Jwts.builder()
 				.setSubject("invalid")
@@ -193,57 +194,72 @@ class JwtProviderTest {
 				.signWith(Keys.secretKeyFor(SignatureAlgorithm.HS256))
 				.compact();
 
-			// WHEN
-
-			// THEN
+			// WHEN & THEN
 			assertThatThrownBy(() -> jwtProvider.validateToken(token))
 				.isInstanceOf(UnauthorizedException.class)
 				.hasMessageContaining("[❎ ERROR] 유효하지 않은 Authorization 헤더입니다.");
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] 만료된 토큰은 false를 반환합니다.")
-		void validateToken_expired_failure() {
+		@DisplayName("[❎ FAILURE] validateToken - 만료된 토큰은 false를 반환합니다.")
+		void validateToken_returnsFalse_whenTokenExpired_failure() {
+			// GIVEN
 			String token = Jwts.builder()
 				.setExpiration(new Date(System.currentTimeMillis() - 1000))
 				.signWith((Key)ReflectionTestUtils.getField(jwtProvider, "signingKey"), SignatureAlgorithm.HS256)
 				.compact();
 
-			assertThat(jwtProvider.validateToken(token)).isFalse();
+			// WHEN
+			boolean isValid = jwtProvider.validateToken(token);
+
+			// THEN
+			assertThat(isValid).isFalse();
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] 구조가 잘못된 토큰은 false를 반환합니다.")
-		void validateToken_malformed_failure() {
+		@DisplayName("[❎ FAILURE] validateToken - 구조가 잘못된 토큰은 false를 반환합니다.")
+		void validateToken_returnsFalse_whenTokenMalformed_failure() {
+			// GIVEN
 			String token = "this.is.not.valid.jwt";
 
-			assertThat(jwtProvider.validateToken(token)).isFalse();
+			// WHEN
+			boolean isValid = jwtProvider.validateToken(token);
+
+			// THEN
+			assertThat(isValid).isFalse();
 		}
 	}
 
 	@Nested
-	@DisplayName("getTokenRemainingTime 메서드: ")
+	@DisplayName("getTokenRemainingTime() 테스트")
 	class GetTokenRemainingTime {
 
 		@Test
-		@DisplayName("[✅ SUCCESS] 토큰의 만료 시간까지 남은 시간을 반환합니다.")
-		void getTokenRemainingTime_success() {
+		@DisplayName("[✅ SUCCESS] getTokenRemainingTime - 토큰의 만료 시간까지 남은 시간을 반환합니다.")
+		void getTokenRemainingTime_returnsPositive_success() {
+			// GIVEN
 			String token = jwtProvider.generateAccessToken(EMAIL, NICKNAME, Role.MEMBER);
+
+			// WHEN
 			long remaining = jwtProvider.getTokenRemainingTime(token);
 
+			// THEN
 			assertThat(remaining).isPositive();
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] 만료된 토큰일 경우 예외가 발생하지 않고 음수 반환됩니다.")
-		void getTokenRemainingTime_expiredToken_returnsNegative() {
+		@DisplayName("[❎ FAILURE] getTokenRemainingTime - 만료된 토큰일 경우 예외가 발생하지 않고 음수 반환됩니다.")
+		void getTokenRemainingTime_returnsNegative_whenTokenExpired_failure() {
+			// GIVEN
 			String token = Jwts.builder()
 				.setExpiration(new Date(System.currentTimeMillis() - 1000))
 				.signWith((Key)ReflectionTestUtils.getField(jwtProvider, "signingKey"), SignatureAlgorithm.HS256)
 				.compact();
 
+			// WHEN
 			long remaining = jwtProvider.getTokenRemainingTime(token);
 
+			// THEN
 			assertThat(remaining).isNegative();
 		}
 	}
