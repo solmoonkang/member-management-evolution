@@ -141,7 +141,7 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] extractToken - 헤더가 없으면 예외가 발생합니다.")
+		@DisplayName("[❎ FAILURE] extractToken - 헤더가 없어 토큰 추출에 실패했습니다.")
 		void extractToken_throwsUnauthorizedException_whenHeaderIsMissing_failure() {
 			// GIVEN
 			MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
@@ -153,7 +153,7 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] extractToken - Bearer 접두사가 없으면 예외가 발생합니다.")
+		@DisplayName("[❎ FAILURE] extractToken - Bearer 접두사가 없어 토큰 추출에 실패했습니다.")
 		void extractToken_throwsUnauthorizedException_whenBearerPrefixMissing_failure() {
 			// GIVEN
 			String invalidToken = "TokenWithoutBearer";
@@ -172,7 +172,7 @@ class JwtProviderTest {
 	class ValidateToken {
 
 		@Test
-		@DisplayName("[✅ SUCCESS] validateToken - 유효한 토큰이면 true를 반환합니다.")
+		@DisplayName("[✅ SUCCESS] validateToken - 유효한 토큰으로 검증에 성공했습니다.")
 		void validateToken_returnsTrue_success() {
 			// GIVEN
 			String token = jwtProvider.generateAccessToken(EMAIL, NICKNAME, Role.MEMBER);
@@ -185,7 +185,7 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] validateToken - 서명이 잘못된 토큰은 false를 반환합니다.")
+		@DisplayName("[❎ FAILURE] validateToken - 서명이 잘못된 토큰으로 검증에 실패했습니다.")
 		void validateToken_throwsUnauthorizedException_whenSignatureInvalid_failure() {
 			// GIVEN
 			String token = Jwts.builder()
@@ -201,7 +201,7 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] validateToken - 만료된 토큰은 false를 반환합니다.")
+		@DisplayName("[❎ FAILURE] validateToken - 만료된 토큰으로 검증에 실패했습니다.")
 		void validateToken_returnsFalse_whenTokenExpired_failure() {
 			// GIVEN
 			String token = Jwts.builder()
@@ -217,7 +217,7 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] validateToken - 구조가 잘못된 토큰은 false를 반환합니다.")
+		@DisplayName("[❎ FAILURE] validateToken - 구조가 잘못된 토큰으로 검증에 실패했습니다.")
 		void validateToken_returnsFalse_whenTokenMalformed_failure() {
 			// GIVEN
 			String token = "this.is.not.valid.jwt";
@@ -235,7 +235,7 @@ class JwtProviderTest {
 	class GetTokenRemainingTime {
 
 		@Test
-		@DisplayName("[✅ SUCCESS] getTokenRemainingTime - 토큰의 만료 시간까지 남은 시간을 반환합니다.")
+		@DisplayName("[✅ SUCCESS] getTokenRemainingTime - 토큰의 만료 시간까지 남은 시간을 성공적으로 반환했습니다.")
 		void getTokenRemainingTime_returnsPositive_success() {
 			// GIVEN
 			String token = jwtProvider.generateAccessToken(EMAIL, NICKNAME, Role.MEMBER);
@@ -248,7 +248,7 @@ class JwtProviderTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] getTokenRemainingTime - 만료된 토큰일 경우 예외가 발생하지 않고 음수 반환됩니다.")
+		@DisplayName("[❎ FAILURE] getTokenRemainingTime - 만료된 토큰으로 예외가 발생하지 않고 음수를 반환합니다.")
 		void getTokenRemainingTime_returnsNegative_whenTokenExpired_failure() {
 			// GIVEN
 			String token = Jwts.builder()
