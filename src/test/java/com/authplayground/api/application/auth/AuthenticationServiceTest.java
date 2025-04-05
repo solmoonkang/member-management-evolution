@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.authplayground.api.application.auth.validator.AuthenticationValidator;
 import com.authplayground.api.application.member.MemberReadService;
 import com.authplayground.api.domain.member.entity.Member;
+import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.domain.member.repository.BlacklistRepository;
 import com.authplayground.api.domain.member.repository.TokenRepository;
 import com.authplayground.api.dto.auth.request.LoginRequest;
@@ -23,7 +24,10 @@ import com.authplayground.global.auth.token.JwtProvider;
 import com.authplayground.global.common.util.SessionManager;
 import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.global.error.exception.UnauthorizedException;
+import com.authplayground.support.JwtFixture;
 import com.authplayground.support.MemberFixture;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @DisplayName("AuthenticationService 단위 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +41,9 @@ class AuthenticationServiceTest {
 
 	@Mock
 	SessionManager sessionManager;
+
+	@Mock
+	HttpServletRequest httpServletRequest;
 
 	@Mock
 	AuthenticationValidator authenticationValidator;
@@ -54,7 +61,7 @@ class AuthenticationServiceTest {
 	BlacklistRepository blacklistRepository;
 
 	@Nested
-	@DisplayName("loginMember() 테스트")
+	@DisplayName("loginMember() 테스트: ")
 	class LoginMember {
 
 		@Test
@@ -84,7 +91,7 @@ class AuthenticationServiceTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] loginMember - 존재하지 않는 이메일로 NotFoundException이 발생합니다.")
+		@DisplayName("[❎ FAILURE] loginMember - 존재하지 않는 이메일로 로그인을 요청했습니다.")
 		void loginMember_throwsNotFoundException_whenEmailNotFound_failure() {
 			// GIVEN
 			LoginRequest loginRequest = MemberFixture.createWrongEmailLoginRequest();
@@ -99,7 +106,7 @@ class AuthenticationServiceTest {
 		}
 
 		@Test
-		@DisplayName("[❎ FAILURE] loginMember - 비밀번호 불일치 시 BadRequestException이 발생합니다.")
+		@DisplayName("[❎ FAILURE] loginMember - 잘못된 비밀번호로 로그인을 요청했습니다.")
 		void loginMember_throwsBadRequestException_whenPasswordMismatch_failure() {
 			// GIVEN
 			Member member = MemberFixture.createMember();
@@ -113,6 +120,66 @@ class AuthenticationServiceTest {
 			assertThatThrownBy(() -> authenticationService.loginMember(loginRequest))
 				.isInstanceOf(UnauthorizedException.class)
 				.hasMessageContaining("[❎ ERROR] 입력하신 비밀번호가 일치하지 않습니다.");
+		}
+	}
+
+	@Nested
+	@DisplayName("logoutMember() 테스트: ")
+	class LogoutMember {
+
+		@Test
+		@DisplayName("[✅ SUCCESS] logoutMember - 로그아웃 시 토큰 블랙리스트 등록 및 세션 종료를 정상 처리합니다.")
+		void logoutMember_performsLogoutOperations_success() {
+			// GIVEN
+			AuthMember authMember = JwtFixture.createAuthMember();
+			String accessToken = "accessToken";
+			long remainingTime = 123456L;
+
+			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
+			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
+
+			// WHEN
+			authenticationService.logoutMember(authMember, httpServletRequest);
+
+			// THEN
+			verify(authenticationTokenService).extractAccessToken(httpServletRequest);
+			verify(authenticationTokenService).getRemainingAccessTokenTime(accessToken);
+			verify(blacklistRepository).registerBlacklist(accessToken, remainingTime);
+			verify(tokenRepository).deleteTokenByEmail(authMember.email());
+			verify(sessionManager).expiredSession(httpServletRequest);
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] logoutMember - 요청에서 액세스 토큰 추출에 실패했습니다.")
+		void logoutMember_throwsUnauthorizedException_whenAccessTokenMissing_failure() {
+			// GIVEN
+			AuthMember authMember = JwtFixture.createAuthMember();
+
+			when(authenticationTokenService.extractAccessToken(httpServletRequest))
+				.thenThrow(new UnauthorizedException(INVALID_AUTHORIZATION_HEADER));
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> authenticationService.logoutMember(authMember, httpServletRequest))
+				.isInstanceOf(UnauthorizedException.class)
+				.hasMessageContaining("[❎ ERROR] 유효하지 않은 Authorization 헤더입니다.");
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] logoutMember - 토큰 삭제 중 예외 발생 시 예외가 전파됩니다.")
+		void logoutMember_throwsRuntimeException_whenDeleteTokenFails_failure() {
+			// GIVEN
+			AuthMember authMember = JwtFixture.createAuthMember();
+			String accessToken = "accessToken";
+			long remainingTime = 123456L;
+
+			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
+			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
+			doThrow(new RuntimeException("Delete failed")).when(tokenRepository).deleteTokenByEmail(authMember.email());
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> authenticationService.logoutMember(authMember, httpServletRequest))
+				.isInstanceOf(RuntimeException.class)
+				.hasMessageContaining("Delete failed");
 		}
 	}
 }
