@@ -1,4 +1,4 @@
-package com.authplayground.support;
+package com.authplayground.support.fixture;
 
 import com.authplayground.api.domain.member.model.AuthMember;
 
