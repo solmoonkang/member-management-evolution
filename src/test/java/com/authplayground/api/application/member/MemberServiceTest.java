@@ -12,10 +12,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.authplayground.api.domain.member.entity.Member;
+import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.response.MemberInfoResponse;
 import com.authplayground.global.common.util.AES128Util;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
+import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.support.MemberFixture;
 
 @ExtendWith(MockitoExtension.class)
@@ -134,6 +138,46 @@ class MemberServiceTest {
 			assertThatThrownBy(() -> memberService.signUpMember(signUpRequest))
 				.isInstanceOf(BadRequestException.class)
 				.hasMessageContaining(PASSWORD_MISMATCH_FAILURE.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("findMemberInfo() 테스트: ")
+	class FindMemberInfo {
+
+		@Test
+		@DisplayName("[✅ SUCCESS] findMemberInfo - 사용자가 회원 정보를 성공적으로 조회했습니다.")
+		void findMemberInfo_returnsMemberInfoResponse_success() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+			Member member = MemberFixture.createMember();
+
+			when(memberReadService.getMemberByEmail(authMember.email())).thenReturn(member);
+
+			// WHEN
+			MemberInfoResponse memberInfoResponse = memberService.findMemberInfo(authMember);
+
+			// THEN
+			assertThat(memberInfoResponse.email()).isEqualTo(member.getEmail());
+			assertThat(memberInfoResponse.nickname()).isEqualTo(member.getNickname());
+			assertThat(memberInfoResponse.address()).isEqualTo(member.getAddress());
+
+			verify(memberReadService).getMemberByEmail(authMember.email());
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] findMemberInfo - 요청하신 사용자가 존재하지 않아 회원 정보 조회에 실패했습니다.")
+		void findMemberInfo_throwsNotFoundException_whenMemberNotFound_failure() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+
+			when(memberReadService.getMemberByEmail(authMember.email()))
+				.thenThrow(new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> memberService.findMemberInfo(authMember))
+				.isInstanceOf(NotFoundException.class)
+				.hasMessageContaining(MEMBER_NOT_FOUND_FAILURE.getMessage());
 		}
 	}
 }
