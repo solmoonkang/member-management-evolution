@@ -23,7 +23,6 @@ public class MemberFixture {
 		return new AuthMember(EMAIL, NICKNAME, Role.MEMBER);
 	}
 
-
 	public static SignUpRequest createSignUpRequest() {
 		return SignUpRequest.builder()
 			.email(EMAIL)
@@ -35,28 +34,16 @@ public class MemberFixture {
 			.build();
 	}
 
-
-	public static LoginRequest createLoginRequest() {
+	public static LoginRequest createLoginRequest(String email, String password) {
 		return LoginRequest.builder()
-			.email(EMAIL)
-			.password(PASSWORD)
-			.build();
-	}
-
-	public static LoginRequest createWrongEmailLoginRequest() {
-		return LoginRequest.builder()
-			.email("notfound@test.com")
-			.password(PASSWORD)
+			.email(email)
+			.password(password)
 			.build();
 	}
 
 	public static LoginRequest createWrongPasswordLoginRequest() {
-		return LoginRequest.builder()
-			.email(EMAIL)
-			.password("wrong-password")
-			.build();
+		return createLoginRequest(EMAIL, "wrong-password");
 	}
-
 
 	public static UpdateRequest createUpdateRequest() {
 		return UpdateRequest.builder()

@@ -1,6 +1,7 @@
 package com.authplayground.api.application.auth;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
+import static com.authplayground.support.MemberFixture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -71,7 +72,7 @@ class AuthenticationServiceTest {
 		void loginMember_returnsLoginResponse_success() {
 			// GIVEN
 			Member member = MemberFixture.createMember();
-			LoginRequest loginRequest = MemberFixture.createLoginRequest();
+			LoginRequest loginRequest = MemberFixture.createLoginRequest(member.getEmail(), member.getPassword());
 
 			String accessToken = "accessToken";
 			String refreshToken = "refreshToken";
@@ -97,7 +98,8 @@ class AuthenticationServiceTest {
 		@DisplayName("[❎ FAILURE] loginMember - 존재하지 않는 이메일로 로그인을 요청했습니다.")
 		void loginMember_throwsNotFoundException_whenEmailNotFound_failure() {
 			// GIVEN
-			LoginRequest loginRequest = MemberFixture.createWrongEmailLoginRequest();
+			String wrongEmail = "notfound@test.com";
+			LoginRequest loginRequest = MemberFixture.createLoginRequest(wrongEmail, PASSWORD);
 
 			when(memberReadService.getMemberByEmail(any()))
 				.thenThrow(new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
