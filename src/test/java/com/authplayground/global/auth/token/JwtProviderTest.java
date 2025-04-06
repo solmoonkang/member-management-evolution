@@ -1,7 +1,7 @@
 package com.authplayground.global.auth.token;
 
 import static com.authplayground.global.common.util.JwtConstant.*;
-import static com.authplayground.support.MemberFixture.*;
+import static com.authplayground.support.TestConstant.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.security.Key;

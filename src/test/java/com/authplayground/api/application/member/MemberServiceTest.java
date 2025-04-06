@@ -21,7 +21,7 @@ import com.authplayground.global.common.util.AES128Util;
 import com.authplayground.global.error.exception.BadRequestException;
 import com.authplayground.global.error.exception.ConflictException;
 import com.authplayground.global.error.exception.NotFoundException;
-import com.authplayground.support.MemberFixture;
+import com.authplayground.support.fixture.MemberFixture;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {

@@ -22,7 +22,7 @@ import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.global.auth.token.JwtProvider;
 import com.authplayground.global.auth.validator.TokenValidator;
 import com.authplayground.global.error.exception.UnauthorizedException;
-import com.authplayground.support.JwtFixture;
+import com.authplayground.support.fixture.JwtFixture;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

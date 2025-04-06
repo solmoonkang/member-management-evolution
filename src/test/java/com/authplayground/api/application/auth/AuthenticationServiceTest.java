@@ -1,7 +1,7 @@
 package com.authplayground.api.application.auth;
 
 import static com.authplayground.global.error.model.ErrorMessage.*;
-import static com.authplayground.support.MemberFixture.*;
+import static com.authplayground.support.TestConstant.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -27,8 +27,8 @@ import com.authplayground.global.auth.token.JwtProvider;
 import com.authplayground.global.common.util.SessionManager;
 import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.global.error.exception.UnauthorizedException;
-import com.authplayground.support.JwtFixture;
-import com.authplayground.support.MemberFixture;
+import com.authplayground.support.fixture.JwtFixture;
+import com.authplayground.support.fixture.MemberFixture;
 
 import jakarta.servlet.http.HttpServletRequest;
 
