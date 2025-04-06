@@ -240,4 +240,40 @@ class MemberServiceTest {
 				.hasMessageContaining(DUPLICATED_NICKNAME_FAILURE.getMessage());
 		}
 	}
+
+	@Nested
+	@DisplayName("deleteMember() 테스트: ")
+	class DeleteMember {
+
+		@Test
+		@DisplayName("[✅ SUCCESS] deleteMember - 사용자가 회원 정보를 성공적으로 삭제했습니다.")
+		void deleteMember_returnsVoid_success() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+			Member member = MemberFixture.createMember();
+
+			when(memberReadService.getMemberByEmail(authMember.email())).thenReturn(member);
+
+			// WHEN
+			memberService.deleteMember(authMember);
+
+			// THEN
+			verify(memberWriteService).deleteMember(member);
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] deleteMember - 존재하지 않는 회원으로 인해 삭제에 실패했습니다.")
+		void deleteMember_throwsNotFoundException_whenMemberNotFound_failure() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+
+			when(memberReadService.getMemberByEmail(authMember.email()))
+				.thenThrow(new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> memberService.deleteMember(authMember))
+				.isInstanceOf(NotFoundException.class)
+				.hasMessageContaining(MEMBER_NOT_FOUND_FAILURE.getMessage());
+		}
+	}
 }
