@@ -5,6 +5,7 @@ import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.domain.member.model.Role;
 import com.authplayground.api.dto.auth.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 
 public class MemberFixture {
 
@@ -14,10 +15,6 @@ public class MemberFixture {
 	public static final String REGISTRATION_NUMBER = "980521-1234567";
 	public static final String ADDRESS = "경기도 구리시 인창동 123";
 
-	// ==============================================================
-	// ✅ 도메인 객체 생성
-	// ==============================================================
-
 	public static Member createMember() {
 		return Member.createMember(createSignUpRequest(), PASSWORD, REGISTRATION_NUMBER);
 	}
@@ -26,9 +23,6 @@ public class MemberFixture {
 		return new AuthMember(EMAIL, NICKNAME, Role.MEMBER);
 	}
 
-	// ==============================================================
-	// ✅ 요청 객체 생성 - 회원가입(SignUp)
-	// ==============================================================
 
 	public static SignUpRequest createSignUpRequest() {
 		return SignUpRequest.builder()
@@ -41,9 +35,6 @@ public class MemberFixture {
 			.build();
 	}
 
-	// ==============================================================
-	// ✅ 요청 객체 생성 - 로그인(Login)
-	// ==============================================================
 
 	public static LoginRequest createLoginRequest() {
 		return LoginRequest.builder()
@@ -63,6 +54,21 @@ public class MemberFixture {
 		return LoginRequest.builder()
 			.email(EMAIL)
 			.password("wrong-password")
+			.build();
+	}
+
+
+	public static UpdateRequest createUpdateRequest() {
+		return UpdateRequest.builder()
+			.nickname("updatedNickname")
+			.address("서울시 강남구")
+			.build();
+	}
+
+	public static UpdateRequest createDuplicatedNickanemUpdateRequest() {
+		return UpdateRequest.builder()
+			.nickname(NICKNAME)
+			.address("서울시 강남구")
 			.build();
 	}
 }

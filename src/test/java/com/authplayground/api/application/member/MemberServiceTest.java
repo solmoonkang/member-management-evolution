@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.authplayground.api.domain.member.entity.Member;
 import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.api.dto.member.response.MemberInfoResponse;
 import com.authplayground.global.common.util.AES128Util;
 import com.authplayground.global.error.exception.BadRequestException;
@@ -178,6 +179,65 @@ class MemberServiceTest {
 			assertThatThrownBy(() -> memberService.findMemberInfo(authMember))
 				.isInstanceOf(NotFoundException.class)
 				.hasMessageContaining(MEMBER_NOT_FOUND_FAILURE.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("updateMember() 테스트: ")
+	class UpdateMember {
+
+		@Test
+		@DisplayName("[✅ SUCCESS] updateMember - 사용자가 회원 정보를 성공적으로 수정했습니다.")
+		void updateMember_returnsVoid_success() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+			Member member = MemberFixture.createMember();
+			UpdateRequest updateRequest = MemberFixture.createUpdateRequest();
+
+			when(memberReadService.getMemberByEmail(authMember.email())).thenReturn(member);
+			doNothing().when(memberReadService).validateMemberNicknameDuplication(updateRequest.nickname());
+
+			// WHEN
+			memberService.updateMember(authMember, updateRequest);
+
+			// THEN
+			verify(memberReadService).getMemberByEmail(authMember.email());
+			verify(memberReadService).validateMemberNicknameDuplication(updateRequest.nickname());
+			verify(memberWriteService).updateMember(member, updateRequest);
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] updateMember - 존재하지 않는 회원으로 인해 수정에 실패했습니다.")
+		void updateMember_throwsNotFoundException_whenMemberNotFound_failure() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+			UpdateRequest updateRequest = MemberFixture.createUpdateRequest();
+
+			when(memberReadService.getMemberByEmail(authMember.email()))
+				.thenThrow(new NotFoundException(MEMBER_NOT_FOUND_FAILURE));
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> memberService.updateMember(authMember, updateRequest))
+				.isInstanceOf(NotFoundException.class)
+				.hasMessageContaining(MEMBER_NOT_FOUND_FAILURE.getMessage());
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] updateMember - 닉네임이 중복되어 회원 정보 수정에 실패했습니다.")
+		void updateMember_throwsConflictException_whenNicknameDuplicated_failure() {
+			// GIVEN
+			AuthMember authMember = MemberFixture.createAuthMember();
+			Member member = MemberFixture.createMember();
+			UpdateRequest duplicatedNickanemUpdateRequest = MemberFixture.createDuplicatedNickanemUpdateRequest();
+
+			when(memberReadService.getMemberByEmail(authMember.email())).thenReturn(member);
+			doThrow(new ConflictException(DUPLICATED_NICKNAME_FAILURE))
+				.when(memberReadService).validateMemberNicknameDuplication(duplicatedNickanemUpdateRequest.nickname());
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> memberService.updateMember(authMember, duplicatedNickanemUpdateRequest))
+				.isInstanceOf(ConflictException.class)
+				.hasMessageContaining(DUPLICATED_NICKNAME_FAILURE.getMessage());
 		}
 	}
 }
