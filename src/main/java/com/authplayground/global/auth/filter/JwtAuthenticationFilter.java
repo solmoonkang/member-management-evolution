@@ -44,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		try {
 			final String permitURI = httpServletRequest.getRequestURI();
 
-			if (PERMIT_ALL_PATH_SET.contains(permitURI)) {
+			if (PERMIT_ALL_PATH_SET.stream().anyMatch(permitURI::startsWith)) {
 				filterChain.doFilter(httpServletRequest, httpServletResponse);
 				return;
 			}
