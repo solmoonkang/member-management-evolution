@@ -4,7 +4,6 @@ import static com.authplayground.global.common.util.JwtConstant.*;
 
 import org.springframework.stereotype.Service;
 
-import com.authplayground.api.domain.member.model.AuthMember;
 import com.authplayground.global.auth.token.JwtProvider;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +27,7 @@ public class AuthenticationTokenService {
 		return jwtProvider.getTokenRemainingTime(accessToken);
 	}
 
-	public AuthMember parseAuthMember(String token) {
-		return jwtProvider.extractAuthMemberFromToken(token);
+	public String extractEmailFromRefreshToken(String refreshToken) {
+		return jwtProvider.extractEmailFromToken(refreshToken);
 	}
 }
