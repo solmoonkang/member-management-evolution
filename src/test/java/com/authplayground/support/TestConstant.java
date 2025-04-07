@@ -8,6 +8,9 @@ public class TestConstant {
 	public static final String LOGIN_URL = "/api/auth/login";
 	public static final String LOGOUT_URL = "/api/auth/logout";
 	public static final String REISSUE_URL = "/api/auth/reissue";
+
+	public static final String FIND_URL = "/api/members";
+
 	public static final MediaType JSON = MediaType.APPLICATION_JSON;
 
 	public static final String EMAIL = "member@test.com";
