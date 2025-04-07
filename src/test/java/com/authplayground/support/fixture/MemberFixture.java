@@ -19,15 +19,29 @@ public class MemberFixture {
 		return new AuthMember(EMAIL, NICKNAME, Role.MEMBER);
 	}
 
-	public static SignUpRequest createSignUpRequest() {
+	public static SignUpRequest createSignUpRequest(String email, String password, String passwordCheck,
+		String nickname, String registrationNumber, String address) {
+
 		return SignUpRequest.builder()
-			.email(EMAIL)
-			.password(PASSWORD)
-			.passwordCheck(PASSWORD)
-			.nickname(NICKNAME)
-			.registrationNumber(REGISTRATION_NUMBER)
-			.address(ADDRESS)
+			.email(email)
+			.password(password)
+			.passwordCheck(passwordCheck)
+			.nickname(nickname)
+			.registrationNumber(registrationNumber)
+			.address(address)
 			.build();
+	}
+
+	public static SignUpRequest createSignUpRequest() {
+		return createSignUpRequest(EMAIL, PASSWORD, PASSWORD, NICKNAME, REGISTRATION_NUMBER, ADDRESS);
+	}
+
+	public static SignUpRequest createSignUpRequestWithWrongEmail() {
+		return createSignUpRequest("testEmail", PASSWORD, PASSWORD, NICKNAME, REGISTRATION_NUMBER, ADDRESS);
+	}
+
+	public static SignUpRequest createSignUpRequestWithWrongPasswordCheck() {
+		return createSignUpRequest(EMAIL, PASSWORD, "differentPassword", NICKNAME, REGISTRATION_NUMBER, ADDRESS);
 	}
 
 	public static LoginRequest createLoginRequest(String email, String password) {
@@ -37,25 +51,26 @@ public class MemberFixture {
 			.build();
 	}
 
-	public static LoginRequest createValidLoginRequest() {
+	public static LoginRequest createLoginRequest() {
 		return createLoginRequest(EMAIL, PASSWORD);
 	}
 
-	public static LoginRequest createWrongPasswordLoginRequest() {
+	public static LoginRequest createLoginRequestWithWrongPassword() {
 		return createLoginRequest(EMAIL, "wrong-password");
 	}
 
-	public static UpdateRequest createUpdateRequest() {
+	public static UpdateRequest createUpdateRequest(String nickname, String address) {
 		return UpdateRequest.builder()
-			.nickname("updatedNickname")
-			.address("서울시 강남구")
+			.nickname(nickname)
+			.address(address)
 			.build();
 	}
 
-	public static UpdateRequest createDuplicatedNickanemUpdateRequest() {
-		return UpdateRequest.builder()
-			.nickname(NICKNAME)
-			.address("서울시 강남구")
-			.build();
+	public static UpdateRequest createUpdateRequest() {
+		return createUpdateRequest("updatedNickname", "서울시 강남구");
+	}
+
+	public static UpdateRequest createUpdateRequestWithDuplicatedNickname() {
+		return createUpdateRequest(NICKNAME, "서울시 강남구");
 	}
 }
