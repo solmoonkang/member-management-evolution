@@ -40,6 +40,10 @@ public class MemberFixture {
 		return createSignUpRequest("testEmail", PASSWORD, PASSWORD, NICKNAME, REGISTRATION_NUMBER, ADDRESS);
 	}
 
+	public static SignUpRequest createSignUpRequestWithDuplicatedNickname() {
+		return createSignUpRequest("member2@test.com", PASSWORD, PASSWORD, "otherNickname", "980506-2345678", ADDRESS);
+	}
+
 	public static SignUpRequest createSignUpRequestWithWrongPasswordCheck() {
 		return createSignUpRequest(EMAIL, PASSWORD, "differentPassword", NICKNAME, REGISTRATION_NUMBER, ADDRESS);
 	}
