@@ -137,17 +137,13 @@ class MemberControllerTest {
 	@DisplayName("[❎ FAILURE] updateMember - 중복된 닉네임으로 요청하여 사용자의 정보 수정에 실패했습니다.")
 	void updateMember_throwsConflictException_whenNicknameDuplicated_failure() throws Exception {
 		// GIVEN
-		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest(
-			"first@email.com", PASSWORD, PASSWORD, "nickname", "000000-0000000", "서울시 강남구"
-		);
-		SignUpRequest duplicatedSignUpRequest = MemberFixture.createSignUpRequest(
-			"second@email.com", PASSWORD, PASSWORD, "otherNickname", "111111-1111111", "서울시 강남구"
-		);
+		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
+		SignUpRequest duplicatedSignUpRequest = MemberFixture.createSignUpRequestWithDuplicatedNickname();
 
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest);
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, duplicatedSignUpRequest);
 
-		LoginRequest loginRequest = MemberFixture.createLoginRequest("second@email.com", PASSWORD);
+		LoginRequest loginRequest = MemberFixture.createLoginRequest("member2@test.com", PASSWORD);
 		MvcResult loginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest).andReturn();
 		TokenResponse tokenResponse = objectMapper
 			.readValue(loginResult.getResponse().getContentAsString(), TokenResponse.class);
@@ -158,5 +154,34 @@ class MemberControllerTest {
 		MemberTestHelper.performUpdate(mockMvc, objectMapper, tokenResponse, duplicatedUpdateRequest)
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.message").value(DUPLICATED_NICKNAME_FAILURE.getMessage()));
+	}
+
+	@Test
+	@DisplayName("[✅ SUCCESS] deleteMember - 사용자의 회원 정보를 성공적으로 삭제했습니다.")
+	void deleteMember_returnsVoid_success() throws Exception {
+		// GIVEN
+		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
+
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest);
+		MvcResult loginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest).andReturn();
+
+		TokenResponse tokenResponse = objectMapper
+			.readValue(loginResult.getResponse().getContentAsString(), TokenResponse.class);
+
+		// WHEN & THEN
+		MemberTestHelper.performDelete(mockMvc, tokenResponse)
+			.andExpect(status().isOk())
+			.andExpect(content().string("[✅ SUCCESS] 사용자 정보 삭제를 성공적으로 완료했습니다."));
+	}
+
+	@Test
+	@DisplayName("[❎ FAILURE] deleteMember - 인증 없이 요청하여 사용자의 정보 삭제에 실패했습니다.")
+	void deleteMember_throwsUnauthorized_whenNoToken_failure() throws Exception {
+		// GIVEN
+
+		// WHEN & THEN
+		MemberTestHelper.performDelete(mockMvc)
+			.andExpect(status().isUnauthorized());
 	}
 }
