@@ -42,4 +42,13 @@ public class MemberTestHelper {
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(updateRequest)));
 	}
+
+	public static ResultActions performDelete(MockMvc mockMvc, TokenResponse tokenResponse) throws Exception {
+		return mockMvc.perform(delete(MEMBER_URL)
+			.header(HttpHeaders.AUTHORIZATION, BEARER_TYPE + tokenResponse.accessToken()));
+	}
+
+	public static ResultActions performDelete(MockMvc mockMvc) throws Exception {
+		return mockMvc.perform(delete(MEMBER_URL));
+	}
 }
