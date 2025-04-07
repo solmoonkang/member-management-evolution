@@ -1,59 +1,65 @@
-## 🔓 Member-Management
+## 🔐 Member-Management
 
-- **인증 시스템을 체계적으로 정리하고, 실제로 동작 가능한 수준까지 직접 설계 및 구현한 프로젝트입니다.**
-- **JWT 기반 인증의 단점을 보완하기 위해 Spring Security + JWT + Session을 병행하는 하이브리드 구조로 설계했습니다.**
+> **Spring Security + JWT + Session 기반의 하이브리드 인증 시스템**
+> 토큰 기반 인증의 단점과 세션 기반 인증의 안정성을 모두 취하고, 실제로 동작 가능한 수준의 인증 구조를 설계/구현한 프로젝트입니다.
 
-### 개발 환경
+### 🧱 기술 스택
 
-- **Language**: JAVA 17,
-- **Framework**: SpringBoot 3.4.4,
-- **ORM**: JPA
-- **Build-Tool**: Gradle,
-- **Dev-Tool**: IntelliJ IDEA,
-- **Test**: JUnit5,
-- **Database**: H2
+| 분류         | 기술                                |
+|------------|-----------------------------------|
+| Language   | Java 17                           |
+| Framework  | Spring Boot 3.4.4                 |
+| ORM        | JPA + Hibernate                   |
+| DB         | H2 (테스트), Redis (RefreshToken 저장) |
+| Build Tool | Gradle                            |
+| 테스트        | JUnit 5, MockMvc                  |
 
-### API 문서
+### 📌 설계 철학
 
-- **URL**: http://localhost:8080/swagger-ui/index.html
-- JWT 전역 인증 설정 + 요청 / 응답 스펙 명시
-- 예외 처리 명세 (ErrorResponse)도 Swagger에 명시
+- 단순한 JWT 인증이 아닌, 실무 보안 요소(세션 고정, 토큰 탈취, 재사용 공격 등)를 반영한 구조 설계
+- 인증 방식(JWT vs Session) 간 단점을 보완하기 위해 **하이브리드 인증 구조** 도입
+- 커스텀 어노테이션 `@Auth` + ArgumentResolver로 인증 주입을 추상화
 
-### 테스트
+### 🧪 테스트 전략 및 커버리지
 
-- JUnit5 기반 단위 테스트 + 통합 테스트 작성
-- 향후 컨트롤러, 인증 필터 레이어에 대한 통합 테스트 추가 예정
+- **단위 테스트**: 서비스, 유효성 검증, 토큰 유틸
+- **통합 테스트**: 컨트롤러, 인증 필터, ArgumentResolver 등 흐름 전체
+- **테스트 커버리지**:
+    - ✅ Class: `97%`
+    - ✅ Method: `94%`
+    - ✅ Line: `86%`
 
-### 인증 흐름 설계
+### 🔐 인증 흐름 요약
 
-#### 1️⃣ 로그인
+| 단계     | 설명                                                     |
+|--------|--------------------------------------------------------|
+| 로그인    | AccessToken + RefreshToken 발급, 동시에 Session에도 사용자 정보 저장 |
+| 인증 요청  | 세션이 존재하면 세션 우선 인증, 없으면 JWT 인증                          |
+| 인증 주입  | 커스텀 어노테이션 `@Auth`로 컨트롤러에 `AuthMember` 주입               |
+| 토큰 재발급 | Redis에 저장된 RefreshToken과 비교하여 재사용 여부 확인 후 재발급          |
+| 로그아웃   | AccessToken을 블랙리스트에 등록 + RefreshToken 삭제 + 세션 만료 처리    |
 
-- 로그인 성공 시 AccessToken + RefreshToken을 발급합니다.
-- 동시에 인증된 사용자 정보를 세션에도 저장합니다.
-- @Auth 어노테이션을 통해 AuthMember 객체를 자동으로 주입합니다.
+### ✨ 주요 기능 요약
 
-#### 2️⃣ 인증 요청 처리
+- [x] Spring Security 기반 로그인 / 로그아웃 / 회원가입
+- [x] JWT + Session 병행 인증 처리
+- [x] RefreshToken Redis 저장 및 1회성 사용 처리
+- [x] AccessToken 블랙리스트 등록
+- [x] @Auth 커스텀 어노테이션 기반 인증 주입
+- [x] Swagger 전역 인증 + 예외 명세 포함
+- [x] 주민등록번호 AES-128 암호화
 
-- 세션이 존재할 경우 세션에서 인증 정보를 주입합니다.
-- 세션이 없을 경우 JWT로 인증 및 SecurityContext에 주입합니다.
-- 이미 인증된 사용자는 중복 파싱 없이 바로 접근이 가능합니다.
+### 📚 API 문서
 
-#### 3️⃣ 재발급
+- Swagger URL: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- 전역 인증 헤더 설정 가능 (AccessToken, RefreshToken)
+- `ErrorResponse` 형식으로 통일된 예외 명세 제공
 
-- 기존 RefreshToken이 Redis에 없거나 다를 경우 재사용으로 판단하여 차단합니다.
-- 재발급 시 기존 AccessToken은 블랙리스트에 등록하여 무효화합니다.
+### 🧠 고민 포인트 & 해결
 
-#### 4️⃣ 로그아웃
-
-- Redis에 저장된 RefreshToken을 삭제합니다.
-- 현재 AccessToken은 Blacklist에 등록합니다.
-- 세션 무효화 처리로 클라이언트 상태를 초기화합니다.
-
-### 기능 구성
-
-- [X] 로그인 / 로그아웃 / 토큰 재발급
-- [X] JWT 토큰 기반 인증 (Access + Refresh 분리)
-- [X] 세션 기반 인증 병행
-- [X] 토큰 블랙리스트 처리
-- [X] 1회성 리프레시 토큰 처리
-- [X] 세션 고정 공격 방지
+| 고민                  | 해결 방식                           |
+|---------------------|---------------------------------|
+| RefreshToken 재사용 공격 | Redis에 저장된 값과 비교하여 재사용 차단       |
+| 토큰 탈취 대응            | AccessToken을 블랙리스트 등록 후 무효화     |
+| 인증 주입 방식            | `@Auth` + ArgumentResolver로 추상화 |
+| 테스트 커버리지 확보         | 통합 테스트 + 커버리지 리포트 정기 확인         |
