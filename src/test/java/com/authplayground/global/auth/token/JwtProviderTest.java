@@ -1,6 +1,7 @@
 package com.authplayground.global.auth.token;
 
 import static com.authplayground.global.common.util.JwtConstant.*;
+import static com.authplayground.support.TestConstant.BEARER_TYPE;
 import static com.authplayground.support.TestConstant.*;
 import static org.assertj.core.api.Assertions.*;
 
@@ -25,6 +26,7 @@ import com.authplayground.global.error.exception.UnauthorizedException;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -122,6 +124,56 @@ class JwtProviderTest {
 	}
 
 	@Nested
+	@DisplayName("extractEmailFromToken() 테스트: ")
+	class ExtractEmailFromToken {
+
+		@Test
+		@DisplayName("[✅ SUCCESS] extractEmailFromToken - 유효한 토큰에서 이메일을 추출합니다.")
+		void extractEmailFromToken_returnsEmail_success() {
+			// GIVEN
+			String refreshToken = jwtProvider.generateRefreshToken(EMAIL);
+
+			// WHEN
+			String actualEmail = jwtProvider.extractEmailFromToken(refreshToken);
+
+			// THEN
+			assertThat(actualEmail).isEqualTo(EMAIL);
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] extractEmailFromToken - 토큰에 이메일 클레임이 존재하지 않아 이메일 추출에 실패했습니다.")
+		void extractEmailFromToken_returnsNull_whenEmailClaimMissing() {
+			// GIVEN
+			Claims claims = Jwts.claims().setSubject("NoEmailClaim");
+
+			Key signingKey = (Key)ReflectionTestUtils.getField(jwtProvider, "signingKey");
+
+			String refreshToken = Jwts.builder()
+				.setClaims(claims)
+				.signWith(signingKey, SignatureAlgorithm.HS256)
+				.compact();
+
+			// WHEN
+			String actualEmail = jwtProvider.extractEmailFromToken(refreshToken);
+
+			// THEN
+			assertThat(actualEmail).isNull();
+		}
+
+		@Test
+		@DisplayName("[❎ FAILURE] extractEmailFromToken - 토큰 형식이 잘못되어 이메일 추출에 실패했습니다.")
+		void extractEmailFromToken_throwsJwtException_whenTokenIsMalformed() {
+			// GIVEN
+			String wrongRefreshToken = "this.is.not.refresh.token";
+
+			// WHEN & THEN
+			assertThatThrownBy(() -> jwtProvider.extractEmailFromToken(wrongRefreshToken))
+				.isInstanceOf(JwtException.class)
+				.hasMessageContaining("JWT");
+		}
+	}
+
+	@Nested
 	@DisplayName("extractToken() 테스트: ")
 	class ExtractToken {
 
@@ -156,7 +208,7 @@ class JwtProviderTest {
 		@DisplayName("[❎ FAILURE] extractToken - Bearer 접두사가 없어 토큰 추출에 실패했습니다.")
 		void extractToken_throwsUnauthorizedException_whenBearerPrefixMissing_failure() {
 			// GIVEN
-			String invalidToken = "TokenWithoutBearer";
+			String invalidToken = "tokenWithoutBearer";
 			MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
 			httpServletRequest.addHeader(AUTHORIZATION_HEADER, invalidToken);
 
