@@ -3,6 +3,7 @@ package com.authplayground.global.error.handler;
 import static com.authplayground.global.error.model.ErrorMessage.*;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -37,6 +38,14 @@ public class GlobalExceptionHandler {
 		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 서버 에러", authPlaygroundException);
 
 		return new ErrorResponse(authPlaygroundException.getMessage(), null);
+	}
+
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	protected ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException methodArgumentNotValidException) {
+		log.error("[✅ LOGGER] GLOBAL EXCEPTION HANDLER: 유효성 검증 에러", methodArgumentNotValidException);
+
+		return new ErrorResponse(methodArgumentNotValidException.getMessage(), null);
 	}
 
 	@ResponseStatus(HttpStatus.CONFLICT)
