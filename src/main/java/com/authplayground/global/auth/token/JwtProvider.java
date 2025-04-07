@@ -76,6 +76,11 @@ public class JwtProvider {
 		return new AuthMember(email, nickname, Role.valueOf(role));
 	}
 
+	public String extractEmailFromToken(String token) {
+		Claims claims = parseClaims(token);
+		return claims.get(CLAIM_EMAIL, String.class);
+	}
+
 	public String extractToken(HttpServletRequest httpServletRequest, String headerName) {
 		String token = httpServletRequest.getHeader(headerName);
 
