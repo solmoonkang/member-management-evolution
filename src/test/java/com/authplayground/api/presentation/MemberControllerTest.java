@@ -1,5 +1,7 @@
 package com.authplayground.api.presentation;
 
+import static com.authplayground.global.error.model.ErrorMessage.*;
+import static com.authplayground.support.TestConstant.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.authplayground.api.dto.auth.request.LoginRequest;
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.support.fixture.MemberFixture;
 import com.authplayground.support.helper.AuthTestHelper;
@@ -95,5 +98,65 @@ class MemberControllerTest {
 		// WHEN & THEN
 		MemberTestHelper.performFind(mockMvc)
 			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	@DisplayName("[✅ SUCCESS] updateMember - 사용자의 회원 정보를 성공적으로 수정했습니다.")
+	void updateMember_returnsVoid_success() throws Exception {
+		// GIVEN
+		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
+		UpdateRequest updateRequest = MemberFixture.createUpdateRequest();
+
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest);
+
+		MvcResult loginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
+			.andReturn();
+
+		TokenResponse tokenResponse = objectMapper
+			.readValue(loginResult.getResponse().getContentAsString(), TokenResponse.class);
+
+		// WHEN & THEN
+		MemberTestHelper.performUpdate(mockMvc, objectMapper, tokenResponse, updateRequest)
+			.andExpect(status().isOk())
+			.andExpect(content().string("[✅ SUCCESS] 사용자 정보 수정을 성공적으로 완료했습니다."));
+	}
+
+	@Test
+	@DisplayName("[❎ FAILURE] updateMember - 인증 없이 요청하여 사용자의 정보 수정에 실패했습니다.")
+	void updateMember_throwsUnauthorizedException_whenNoToken_failure() throws Exception {
+		// GIVEN
+		UpdateRequest updateRequest = MemberFixture.createUpdateRequest();
+
+		// WHEN & THEN
+		MemberTestHelper.performUpdate(mockMvc, objectMapper, updateRequest)
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	@DisplayName("[❎ FAILURE] updateMember - 중복된 닉네임으로 요청하여 사용자의 정보 수정에 실패했습니다.")
+	void updateMember_throwsConflictException_whenNicknameDuplicated_failure() throws Exception {
+		// GIVEN
+		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest(
+			"first@email.com", PASSWORD, PASSWORD, "nickname", "000000-0000000", "서울시 강남구"
+		);
+		SignUpRequest duplicatedSignUpRequest = MemberFixture.createSignUpRequest(
+			"second@email.com", PASSWORD, PASSWORD, "otherNickname", "111111-1111111", "서울시 강남구"
+		);
+
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest);
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, duplicatedSignUpRequest);
+
+		LoginRequest loginRequest = MemberFixture.createLoginRequest("second@email.com", PASSWORD);
+		MvcResult loginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest).andReturn();
+		TokenResponse tokenResponse = objectMapper
+			.readValue(loginResult.getResponse().getContentAsString(), TokenResponse.class);
+
+		UpdateRequest duplicatedUpdateRequest = MemberFixture.createUpdateRequestWithDuplicatedNickname();
+
+		// WHEN & THEN
+		MemberTestHelper.performUpdate(mockMvc, objectMapper, tokenResponse, duplicatedUpdateRequest)
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.message").value(DUPLICATED_NICKNAME_FAILURE.getMessage()));
 	}
 }
