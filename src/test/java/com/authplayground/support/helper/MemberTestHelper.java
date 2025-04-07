@@ -4,10 +4,12 @@ import static com.authplayground.support.TestConstant.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.authplayground.api.dto.member.request.SignUpRequest;
+import com.authplayground.api.dto.member.request.UpdateRequest;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,11 +22,24 @@ public class MemberTestHelper {
 	}
 
 	public static ResultActions performFind(MockMvc mockMvc, TokenResponse tokenResponse) throws Exception {
-		return mockMvc.perform(get(FIND_URL)
+		return mockMvc.perform(get(MEMBER_URL)
 			.header(HttpHeaders.AUTHORIZATION, BEARER_TYPE + tokenResponse.accessToken()));
 	}
 
 	public static ResultActions performFind(MockMvc mockMvc) throws Exception {
-		return mockMvc.perform(get(FIND_URL));
+		return mockMvc.perform(get(MEMBER_URL));
+	}
+
+	public static ResultActions performUpdate(MockMvc mockMvc, ObjectMapper objectMapper, TokenResponse tokenResponse, UpdateRequest updateRequest) throws Exception {
+		return mockMvc.perform(put(MEMBER_URL)
+			.header(HttpHeaders.AUTHORIZATION, BEARER_TYPE + tokenResponse.accessToken())
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(objectMapper.writeValueAsString(updateRequest)));
+	}
+
+	public static ResultActions performUpdate(MockMvc mockMvc, ObjectMapper objectMapper, UpdateRequest updateRequest) throws Exception {
+		return mockMvc.perform(put(MEMBER_URL)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(objectMapper.writeValueAsString(updateRequest)));
 	}
 }
