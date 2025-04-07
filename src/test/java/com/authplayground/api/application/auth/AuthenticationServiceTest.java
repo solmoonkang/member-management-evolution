@@ -115,7 +115,7 @@ class AuthenticationServiceTest {
 		void loginMember_throwsBadRequestException_whenPasswordMismatch_failure() {
 			// GIVEN
 			Member member = MemberFixture.createMember();
-			LoginRequest loginRequest = MemberFixture.createWrongPasswordLoginRequest();
+			LoginRequest loginRequest = MemberFixture.createLoginRequestWithWrongPassword();
 
 			when(memberReadService.getMemberByEmail(member.getEmail())).thenReturn(member);
 			doThrow(new UnauthorizedException(PASSWORD_MISMATCH_FAILURE))

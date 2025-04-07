@@ -18,6 +18,7 @@ import com.authplayground.api.dto.member.request.SignUpRequest;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.support.fixture.MemberFixture;
 import com.authplayground.support.helper.AuthTestHelper;
+import com.authplayground.support.helper.MemberTestHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -37,9 +38,9 @@ class AuthenticationControllerTest {
 	void loginMember_returnsTokenResponse_success() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createValidLoginRequest();
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		AuthTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		// WHEN & THEN
@@ -67,10 +68,10 @@ class AuthenticationControllerTest {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
 
-		AuthTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
-		LoginRequest wrongPasswordRequest = MemberFixture.createWrongPasswordLoginRequest();
+		LoginRequest wrongPasswordRequest = MemberFixture.createLoginRequestWithWrongPassword();
 
 		// WHEN & THEN
 		AuthTestHelper.performLogin(mockMvc, objectMapper, wrongPasswordRequest)
@@ -83,9 +84,9 @@ class AuthenticationControllerTest {
 	void logoutMember_returnsVoid_success() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createValidLoginRequest();
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		AuthTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		MvcResult actualMvcResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
@@ -128,9 +129,9 @@ class AuthenticationControllerTest {
 	void reissueMember_returnsTokenResponse_success() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createValidLoginRequest();
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		AuthTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		MvcResult actualLoginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
@@ -177,9 +178,9 @@ class AuthenticationControllerTest {
 	void reissueToken_throwsUnauthorizedException_whenWithReusedRefreshToken_failure() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createValidLoginRequest();
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		AuthTestHelper.performSignup(mockMvc, objectMapper, signUpRequest);
+		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest);
 
 		MvcResult actualLoginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
 			.andReturn();

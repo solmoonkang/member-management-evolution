@@ -228,7 +228,7 @@ class MemberServiceTest {
 			// GIVEN
 			AuthMember authMember = MemberFixture.createAuthMember();
 			Member member = MemberFixture.createMember();
-			UpdateRequest duplicatedNickanemUpdateRequest = MemberFixture.createDuplicatedNickanemUpdateRequest();
+			UpdateRequest duplicatedNickanemUpdateRequest = MemberFixture.createUpdateRequestWithDuplicatedNickname();
 
 			when(memberReadService.getMemberByEmail(authMember.email())).thenReturn(member);
 			doThrow(new ConflictException(DUPLICATED_NICKNAME_FAILURE))
