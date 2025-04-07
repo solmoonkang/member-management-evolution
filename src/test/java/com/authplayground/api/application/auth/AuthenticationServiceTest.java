@@ -107,7 +107,7 @@ class AuthenticationServiceTest {
 			// WHEN & THEN
 			assertThatThrownBy(() -> authenticationService.loginMember(loginRequest))
 				.isInstanceOf(NotFoundException.class)
-				.hasMessageContaining("[❎ ERROR] 요청하신 회원을 찾을 수 없습니다.");
+				.hasMessageContaining(MEMBER_NOT_FOUND_FAILURE.getMessage());
 		}
 
 		@Test
@@ -124,7 +124,7 @@ class AuthenticationServiceTest {
 			// WHEN & THEN
 			assertThatThrownBy(() -> authenticationService.loginMember(loginRequest))
 				.isInstanceOf(UnauthorizedException.class)
-				.hasMessageContaining("[❎ ERROR] 입력하신 비밀번호가 일치하지 않습니다.");
+				.hasMessageContaining(PASSWORD_MISMATCH_FAILURE.getMessage());
 		}
 	}
 
@@ -166,7 +166,7 @@ class AuthenticationServiceTest {
 			// WHEN & THEN
 			assertThatThrownBy(() -> authenticationService.logoutMember(authMember, httpServletRequest))
 				.isInstanceOf(UnauthorizedException.class)
-				.hasMessageContaining("[❎ ERROR] 유효하지 않은 Authorization 헤더입니다.");
+				.hasMessageContaining(INVALID_AUTHORIZATION_HEADER.getMessage());
 		}
 
 		@Test
@@ -211,7 +211,7 @@ class AuthenticationServiceTest {
 			when(authenticationTokenService.extractRefreshToken(httpServletRequest)).thenReturn(refreshToken);
 
 			doNothing().when(authenticationValidator).validateRefreshTokenFormat(refreshToken);
-			when(authenticationTokenService.parseAuthMember(refreshToken)).thenReturn(authMember);
+			when(authenticationTokenService.extractEmailFromRefreshToken(refreshToken)).thenReturn(member.getEmail());
 			when(tokenRepository.findTokenByEmail(authMember.email())).thenReturn(savedToken);
 
 			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
@@ -251,7 +251,7 @@ class AuthenticationServiceTest {
 			// WHEN & THEN
 			assertThatThrownBy(() -> authenticationService.reissueToken(httpServletRequest))
 				.isInstanceOf(UnauthorizedException.class)
-				.hasMessageContaining("[❎ ERROR] 유효하지 않은 리프레시 토큰입니다.");
+				.hasMessageContaining(UNAUTHORIZED_REFRESH_TOKEN.getMessage());
 		}
 
 		@Test
@@ -263,13 +263,16 @@ class AuthenticationServiceTest {
 			String savedToken = "differentSavedToken";
 
 			AuthMember authMember = JwtFixture.createAuthMember();
+			Member member = MemberFixture.createMember();
 
 			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
 			when(authenticationTokenService.extractRefreshToken(httpServletRequest)).thenReturn(refreshToken);
-
 			doNothing().when(authenticationValidator).validateRefreshTokenFormat(refreshToken);
 
-			when(authenticationTokenService.parseAuthMember(any(String.class))).thenReturn(authMember);
+			when(authenticationTokenService.extractEmailFromRefreshToken(any(String.class)))
+				.thenReturn(authMember.email());
+
+			when(memberReadService.getMemberByEmail(any(String.class))).thenReturn(member);
 			when(tokenRepository.findTokenByEmail(any(String.class))).thenReturn(savedToken);
 
 			doThrow(new UnauthorizedException(REUSED_REFRESH_TOKEN))
@@ -278,7 +281,7 @@ class AuthenticationServiceTest {
 			// WHEN & THEN
 			assertThatThrownBy(() -> authenticationService.reissueToken(httpServletRequest))
 				.isInstanceOf(UnauthorizedException.class)
-				.hasMessageContaining("[❎ ERROR] 재사용된 리프레시 토큰 사용을 시도했습니다.");
+				.hasMessageContaining(REUSED_REFRESH_TOKEN.getMessage());
 		}
 	}
 }
