@@ -62,16 +62,16 @@ public class AuthenticationService {
 
 		authenticationValidator.validateRefreshTokenFormat(refreshToken);
 
-		final AuthMember authMember = authenticationTokenService.parseAuthMember(refreshToken);
-		final String storedRefreshToken = tokenRepository.findTokenByEmail(authMember.email());
+		final String email = authenticationTokenService.extractEmailFromRefreshToken(refreshToken);
+		final Member member = memberReadService.getMemberByEmail(email);
+		final String storedRefreshToken = tokenRepository.findTokenByEmail(member.getEmail());
 		final long remainingTokenTime = authenticationTokenService.getRemainingAccessTokenTime(accessToken);
 
 		authenticationValidator.validateRefreshTokenReused(storedRefreshToken, refreshToken);
 
 		blacklistRepository.registerBlacklist(accessToken, remainingTokenTime);
-		tokenRepository.deleteTokenByEmail(authMember.email());
+		tokenRepository.deleteTokenByEmail(email);
 
-		final Member member = memberReadService.getMemberByEmail(authMember.email());
 		final String newAccessToken = generateAccessToken(member);
 		final String newRefreshToken = generateRefreshToken(member);
 
