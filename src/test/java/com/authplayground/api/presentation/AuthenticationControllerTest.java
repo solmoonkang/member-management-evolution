@@ -40,7 +40,7 @@ class AuthenticationControllerTest {
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
 		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		// WHEN & THEN
@@ -68,7 +68,7 @@ class AuthenticationControllerTest {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
 
-		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		LoginRequest wrongPasswordRequest = MemberFixture.createLoginRequestWithWrongPassword();
@@ -86,7 +86,7 @@ class AuthenticationControllerTest {
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
 		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		MvcResult actualMvcResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
@@ -131,7 +131,7 @@ class AuthenticationControllerTest {
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
 		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest)
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		MvcResult actualLoginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
@@ -180,7 +180,7 @@ class AuthenticationControllerTest {
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
 		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 
-		MemberTestHelper.performSignup(mockMvc, objectMapper, signUpRequest);
+		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest);
 
 		MvcResult actualLoginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
 			.andReturn();
