@@ -7,7 +7,6 @@ import com.authplayground.api.dto.token.response.TokenResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
-
 @Builder
 @Schema(description = "로그인 응답 DTO")
 public record LoginResponse(
