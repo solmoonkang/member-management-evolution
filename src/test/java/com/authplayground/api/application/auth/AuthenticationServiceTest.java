@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseCookie;
 
 import com.authplayground.api.application.auth.validator.AuthenticationValidator;
 import com.authplayground.api.application.member.MemberReadService;
@@ -21,12 +22,15 @@ import com.authplayground.api.domain.member.model.Role;
 import com.authplayground.api.domain.member.repository.BlacklistRepository;
 import com.authplayground.api.domain.member.repository.TokenRepository;
 import com.authplayground.api.dto.auth.request.LoginRequest;
+import com.authplayground.api.dto.auth.response.CookieAttachedResponse;
 import com.authplayground.api.dto.auth.response.LoginResponse;
 import com.authplayground.api.dto.token.response.TokenResponse;
 import com.authplayground.global.auth.token.JwtProvider;
+import com.authplayground.global.common.util.CookieUtil;
 import com.authplayground.global.common.util.SessionManager;
 import com.authplayground.global.error.exception.NotFoundException;
 import com.authplayground.global.error.exception.UnauthorizedException;
+import com.authplayground.support.fixture.CookieFixture;
 import com.authplayground.support.fixture.JwtFixture;
 import com.authplayground.support.fixture.MemberFixture;
 
@@ -63,6 +67,9 @@ class AuthenticationServiceTest {
 	@Mock
 	BlacklistRepository blacklistRepository;
 
+	@Mock
+	CookieUtil cookieUtil;
+
 	@Nested
 	@DisplayName("loginMember() 테스트: ")
 	class LoginMember {
@@ -77,19 +84,30 @@ class AuthenticationServiceTest {
 			String accessToken = "accessToken";
 			String refreshToken = "refreshToken";
 
+			ResponseCookie createResponseCookie = CookieFixture.createRefreshTokenCookie(refreshToken, 1209600L);
+
 			when(memberReadService.getMemberByEmail(member.getEmail())).thenReturn(member);
 			doNothing().when(authenticationValidator).validatePasswordMatches(any(), any());
 			when(jwtProvider.generateAccessToken(any(String.class), any(String.class), any(Role.class)))
 				.thenReturn(accessToken);
 			when(jwtProvider.generateRefreshToken(any(String.class))).thenReturn(refreshToken);
+			when(cookieUtil.createRefreshTokenCookie(refreshToken)).thenReturn(createResponseCookie);
 
 			// WHEN
-			LoginResponse loginResponse = authenticationService.loginMember(loginRequest);
+			CookieAttachedResponse<LoginResponse> loginResponse = authenticationService.loginMember(loginRequest);
 
 			// THEN
-			assertThat(loginResponse.tokenResponse().accessToken()).isEqualTo(accessToken);
-			assertThat(loginResponse.tokenResponse().refreshToken()).isEqualTo(refreshToken);
-			assertThat(loginResponse.authMember().email()).isEqualTo(member.getEmail());
+			assertThat(loginResponse.response().tokenResponse().accessToken()).isEqualTo(accessToken);
+			assertThat(loginResponse.response().tokenResponse().refreshToken()).isEqualTo(refreshToken);
+			assertThat(loginResponse.response().authMember().email()).isEqualTo(member.getEmail());
+
+			ResponseCookie responseCookie = loginResponse.responseCookie();
+			assertThat(responseCookie.getName()).isEqualTo(REFRESH_TOKEN_HEADER);
+			assertThat(responseCookie.getValue()).isEqualTo(refreshToken);
+			assertThat(responseCookie.isHttpOnly()).isTrue();
+			assertThat(responseCookie.getMaxAge().getSeconds()).isEqualTo(1209600L);
+			assertThat(responseCookie.getPath()).isEqualTo("/");
+			assertThat(responseCookie.getSameSite()).isEqualTo("None");
 
 			verify(tokenRepository).saveToken(eq(member.getEmail()), eq(refreshToken));
 		}
@@ -134,17 +152,20 @@ class AuthenticationServiceTest {
 
 		@Test
 		@DisplayName("[✅ SUCCESS] logoutMember - 로그아웃 시 토큰 블랙리스트 등록 및 세션 종료를 정상 처리합니다.")
-		void logoutMember_performsLogoutOperations_success() {
+		void logoutMember_returnsResponseCookie_success() {
 			// GIVEN
 			AuthMember authMember = JwtFixture.createAuthMember();
 			String accessToken = "accessToken";
 			long remainingTime = 360000L;
 
+			ResponseCookie deleteResponseCookie = CookieFixture.createRefreshTokenCookie("", 0L);
+
 			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
 			when(authenticationTokenService.getRemainingAccessTokenTime(accessToken)).thenReturn(remainingTime);
+			when(cookieUtil.deleteRefreshTokenCookie()).thenReturn(deleteResponseCookie);
 
 			// WHEN
-			authenticationService.logoutMember(authMember, httpServletRequest);
+			ResponseCookie responseCookie = authenticationService.logoutMember(authMember, httpServletRequest);
 
 			// THEN
 			verify(authenticationTokenService).extractAccessToken(httpServletRequest);
@@ -152,6 +173,13 @@ class AuthenticationServiceTest {
 			verify(blacklistRepository).registerBlacklist(accessToken, remainingTime);
 			verify(tokenRepository).deleteTokenByEmail(authMember.email());
 			verify(sessionManager).expiredSession(httpServletRequest);
+
+			assertThat(responseCookie.getName()).isEqualTo(REFRESH_TOKEN_HEADER);
+			assertThat(responseCookie.getValue()).isEmpty();
+			assertThat(responseCookie.isHttpOnly()).isTrue();
+			assertThat(responseCookie.getMaxAge().getSeconds()).isEqualTo(0L);
+			assertThat(responseCookie.getPath()).isEqualTo("/");
+			assertThat(responseCookie.getSameSite()).isEqualTo("None");
 		}
 
 		@Test
@@ -207,6 +235,8 @@ class AuthenticationServiceTest {
 			String newAccessToken = "newAccessToken";
 			String newRefreshToken = "newRefreshToken";
 
+			ResponseCookie createResponseCookie = CookieFixture.createRefreshTokenCookie(newRefreshToken, 1209600L);
+
 			when(authenticationTokenService.extractAccessToken(httpServletRequest)).thenReturn(accessToken);
 			when(authenticationTokenService.extractRefreshToken(httpServletRequest)).thenReturn(refreshToken);
 
@@ -223,12 +253,23 @@ class AuthenticationServiceTest {
 			when(jwtProvider.generateRefreshToken(any(String.class)))
 				.thenReturn(newRefreshToken);
 
+			when(cookieUtil.createRefreshTokenCookie(newRefreshToken)).thenReturn(createResponseCookie);
+
 			// WHEN
-			TokenResponse tokenResponse = authenticationService.reissueToken(httpServletRequest);
+			CookieAttachedResponse<TokenResponse> tokenResponse = authenticationService.reissueToken(
+				httpServletRequest);
 
 			// THEN
-			assertThat(tokenResponse.accessToken()).isEqualTo(newAccessToken);
-			assertThat(tokenResponse.refreshToken()).isEqualTo(newRefreshToken);
+			assertThat(tokenResponse.response().accessToken()).isEqualTo(newAccessToken);
+			assertThat(tokenResponse.response().refreshToken()).isEqualTo(newRefreshToken);
+
+			ResponseCookie responseCookie = tokenResponse.responseCookie();
+			assertThat(responseCookie.getName()).isEqualTo(REFRESH_TOKEN_HEADER);
+			assertThat(responseCookie.getValue()).isEqualTo(newRefreshToken);
+			assertThat(responseCookie.isHttpOnly()).isTrue();
+			assertThat(responseCookie.getMaxAge().getSeconds()).isEqualTo(1209600L);
+			assertThat(responseCookie.getPath()).isEqualTo("/");
+			assertThat(responseCookie.getSameSite()).isEqualTo("None");
 
 			verify(blacklistRepository).registerBlacklist(accessToken, remainingTime);
 			verify(tokenRepository).deleteTokenByEmail(authMember.email());
