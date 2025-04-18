@@ -19,5 +19,6 @@ public class TestConstant {
 	public static final String REGISTRATION_NUMBER = "980521-1234567";
 	public static final String ADDRESS = "경기도 구리시 인창동 123";
 
+	public static final String REFRESH_TOKEN_HEADER = "Refresh-Token";
 	public static final String BEARER_TYPE = "Bearer ";
 }
