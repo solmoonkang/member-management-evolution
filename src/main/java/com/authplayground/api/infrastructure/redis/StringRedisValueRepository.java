@@ -1,6 +1,6 @@
 package com.authplayground.api.infrastructure.redis;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -13,8 +13,8 @@ public class StringRedisValueRepository {
 
 	private final StringRedisTemplate stringRedisTemplate;
 
-	public void save(String key, String value, Duration expired) {
-		stringRedisTemplate.opsForValue().set(key, value, expired);
+	public void save(String key, String value, long expiration) {
+		stringRedisTemplate.opsForValue().set(key, value, expiration, TimeUnit.MILLISECONDS);
 	}
 
 	public String find(String key) {
