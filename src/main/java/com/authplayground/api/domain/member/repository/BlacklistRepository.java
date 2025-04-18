@@ -2,8 +2,6 @@ package com.authplayground.api.domain.member.repository;
 
 import static com.authplayground.global.common.util.RedisConstant.*;
 
-import java.time.Duration;
-
 import org.springframework.stereotype.Repository;
 
 import com.authplayground.api.infrastructure.redis.StringRedisValueRepository;
@@ -20,7 +18,7 @@ public class BlacklistRepository {
 
 	public void registerBlacklist(String accessToken, long remainingTokenExpirationTime) {
 		stringRedisValueRepository.save(
-			generateBlacklistKey(accessToken), BLACKLISTED_VALUE, Duration.ofMillis(remainingTokenExpirationTime));
+			generateBlacklistKey(accessToken), BLACKLISTED_VALUE, remainingTokenExpirationTime);
 	}
 
 	public boolean isBlacklisted(String accessToken) {
