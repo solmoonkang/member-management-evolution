@@ -4,13 +4,16 @@ import static com.authplayground.global.error.model.ErrorMessage.*;
 import static com.authplayground.support.TestConstant.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.authplayground.api.dto.auth.request.LoginRequest;
@@ -33,21 +36,34 @@ class AuthenticationControllerTest {
 	@Autowired
 	ObjectMapper objectMapper;
 
+	@Autowired
+	StringRedisTemplate stringRedisTemplate;
+
+	@AfterEach
+	void tearDown() {
+		stringRedisTemplate.getConnectionFactory().getConnection().serverCommands().flushDb();
+	}
+
 	@Test
 	@DisplayName("[✅ SUCCESS] loginMember - 사용자가 성공적으로 로그인을 하고, 토큰을 반환합니다.")
 	void loginMember_returnsTokenResponse_success() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createLoginRequest();
-
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
-		// WHEN & THEN
-		AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.accessToken").exists())
-			.andExpect(jsonPath("$.refreshToken").exists());
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
+
+		// WHEN
+		ResultActions loginResultActions = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
+			.andExpect(status().isOk());
+
+		// THEN
+		TokenResponse tokenResponse = objectMapper.readValue(
+			loginResultActions.andReturn().getResponse().getContentAsString(), TokenResponse.class);
+
+		AuthTestHelper.expectTokenResponse(loginResultActions);
+		AuthTestHelper.expectRefreshTokenCreated(loginResultActions, tokenResponse.refreshToken());
 	}
 
 	@Test
@@ -57,9 +73,10 @@ class AuthenticationControllerTest {
 		LoginRequest invalidEmailRequest = MemberFixture.createLoginRequest("notfound@test.com", PASSWORD);
 
 		// WHEN & THEN
-		AuthTestHelper.performLogin(mockMvc, objectMapper, invalidEmailRequest)
-			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.message").value(MEMBER_NOT_FOUND_FAILURE.getMessage()));
+		ResultActions loginResultActions = AuthTestHelper.performLogin(mockMvc, objectMapper, invalidEmailRequest)
+			.andExpect(status().isNotFound());
+
+		AuthTestHelper.expectFailureMessage(loginResultActions, MEMBER_NOT_FOUND_FAILURE.getMessage());
 	}
 
 	@Test
@@ -67,16 +84,16 @@ class AuthenticationControllerTest {
 	void loginMember_throwsBadRequestException_whenPasswordMismatch_failure() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
 		LoginRequest wrongPasswordRequest = MemberFixture.createLoginRequestWithWrongPassword();
 
 		// WHEN & THEN
-		AuthTestHelper.performLogin(mockMvc, objectMapper, wrongPasswordRequest)
-			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message").value(PASSWORD_MISMATCH_FAILURE.getMessage()));
+		ResultActions loginResultActions = AuthTestHelper.performLogin(mockMvc, objectMapper, wrongPasswordRequest)
+			.andExpect(status().isBadRequest());
+
+		AuthTestHelper.expectFailureMessage(loginResultActions, PASSWORD_MISMATCH_FAILURE.getMessage());
 	}
 
 	@Test
@@ -84,32 +101,35 @@ class AuthenticationControllerTest {
 	void logoutMember_returnsVoid_success() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createLoginRequest();
-
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 		MvcResult actualMvcResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
 			.andExpect(status().isOk())
 			.andReturn();
 
-		String content = actualMvcResult.getResponse().getContentAsString();
-		TokenResponse tokenResponse = objectMapper.readValue(content, TokenResponse.class);
+		TokenResponse tokenResponse = objectMapper.readValue(
+			actualMvcResult.getResponse().getContentAsString(), TokenResponse.class);
+
 		String accessToken = tokenResponse.accessToken();
 
 		// WHEN & THEN
-		AuthTestHelper.performLogout(mockMvc, accessToken)
+		ResultActions logoutResultActions = AuthTestHelper.performLogout(mockMvc, accessToken)
 			.andExpect(status().isOk())
 			.andExpect(content().string("[✅ SUCCESS] 사용자 로그아웃을 성공적으로 완료했습니다."));
+
+		AuthTestHelper.expectRefreshTokenDeleted(logoutResultActions);
 	}
 
 	@Test
 	@DisplayName("[❎ FAILURE] logoutMember - 인증 토큰이 존재하지 않아 로그아웃에 실패했습니다.")
 	void logoutMember_throwsUnauthorizedException_whenWithoutToken_failure() throws Exception {
 		// WHEN & THEN
-		AuthTestHelper.performLogout(mockMvc)
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.message").value(INVALID_AUTHORIZATION_HEADER.getMessage()));
+		ResultActions logoutResultActions = AuthTestHelper.performLogout(mockMvc)
+			.andExpect(status().isUnauthorized());
+
+		AuthTestHelper.expectFailureMessage(logoutResultActions, INVALID_AUTHORIZATION_HEADER.getMessage());
 	}
 
 	@Test
@@ -119,9 +139,10 @@ class AuthenticationControllerTest {
 		String wrongAccessToken = BEARER_TYPE + "dummy.access.token";
 
 		// WHEN & THEN
-		AuthTestHelper.performLogout(mockMvc, wrongAccessToken)
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.message").value(INVALID_AUTHORIZATION_HEADER.getMessage()));
+		ResultActions logoutResultActions = AuthTestHelper.performLogout(mockMvc, wrongAccessToken)
+			.andExpect(status().isUnauthorized());
+
+		AuthTestHelper.expectFailureMessage(logoutResultActions, INVALID_AUTHORIZATION_HEADER.getMessage());
 	}
 
 	@Test
@@ -129,23 +150,23 @@ class AuthenticationControllerTest {
 	void reissueMember_returnsTokenResponse_success() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createLoginRequest();
-
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest)
 			.andExpect(status().isOk());
 
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 		MvcResult actualLoginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
 			.andExpect(status().isOk())
 			.andReturn();
 
-		String content = actualLoginResult.getResponse().getContentAsString();
-		TokenResponse tokenResponse = objectMapper.readValue(content, TokenResponse.class);
+		TokenResponse tokenResponse = objectMapper.readValue(
+			actualLoginResult.getResponse().getContentAsString(), TokenResponse.class);
 
 		// WHEN & THEN
-		AuthTestHelper.performReissue(mockMvc, tokenResponse)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.accessToken").exists())
-			.andExpect(jsonPath("$.refreshToken").exists());
+		ResultActions reissueResultActions = AuthTestHelper.performReissue(mockMvc, tokenResponse)
+			.andExpect(status().isOk());
+
+		AuthTestHelper.expectTokenResponse(reissueResultActions);
+		AuthTestHelper.expectRefreshTokenCreated(reissueResultActions, tokenResponse.refreshToken());
 	}
 
 	@Test
@@ -155,9 +176,10 @@ class AuthenticationControllerTest {
 		String dummyAccessToken = BEARER_TYPE + "dummy.access.token";
 
 		// WHEN & THEN
-		AuthTestHelper.performReissue(mockMvc, dummyAccessToken)
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.message").value(UNAUTHORIZED_REFRESH_TOKEN.getMessage()));
+		ResultActions reissueResultActions = AuthTestHelper.performReissue(mockMvc, dummyAccessToken)
+			.andExpect(status().isUnauthorized());
+
+		AuthTestHelper.expectFailureMessage(reissueResultActions, UNAUTHORIZED_REFRESH_TOKEN.getMessage());
 	}
 
 	@Test
@@ -168,9 +190,10 @@ class AuthenticationControllerTest {
 		String wrongRefreshToken = "invalid.refresh.token";
 
 		// WHEN & THEN
-		AuthTestHelper.performReissue(mockMvc, wrongAccessToken, wrongRefreshToken)
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.message").value(UNAUTHORIZED_REFRESH_TOKEN.getMessage()));
+		ResultActions reissueResultActions = AuthTestHelper.performReissue(mockMvc, wrongAccessToken, wrongRefreshToken)
+			.andExpect(status().isUnauthorized());
+
+		AuthTestHelper.expectFailureMessage(reissueResultActions, UNAUTHORIZED_REFRESH_TOKEN.getMessage());
 	}
 
 	@Test
@@ -178,23 +201,25 @@ class AuthenticationControllerTest {
 	void reissueToken_throwsUnauthorizedException_whenWithReusedRefreshToken_failure() throws Exception {
 		// GIVEN
 		SignUpRequest signUpRequest = MemberFixture.createSignUpRequest();
-		LoginRequest loginRequest = MemberFixture.createLoginRequest();
-
 		MemberTestHelper.performSignUp(mockMvc, objectMapper, signUpRequest);
 
+		LoginRequest loginRequest = MemberFixture.createLoginRequest();
 		MvcResult actualLoginResult = AuthTestHelper.performLogin(mockMvc, objectMapper, loginRequest)
 			.andReturn();
 
-		TokenResponse tokenResponse = objectMapper.readValue(
+		TokenResponse originalToken = objectMapper.readValue(
 			actualLoginResult.getResponse().getContentAsString(), TokenResponse.class);
 
 		// WHEN & THEN
-		MvcResult actualReissueToken = AuthTestHelper.performReissue(mockMvc, tokenResponse)
+		MvcResult firstReissueResultActions = AuthTestHelper.performReissue(mockMvc, originalToken)
 			.andExpect(status().isOk())
 			.andReturn();
 
-		AuthTestHelper.performReissue(mockMvc, tokenResponse)
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.message").value(REUSED_REFRESH_TOKEN.getMessage()));
+		Thread.sleep(300);
+
+		ResultActions secondReissueResultActions = AuthTestHelper.performReissue(mockMvc, originalToken)
+			.andExpect(status().isUnauthorized());
+
+		AuthTestHelper.expectFailureMessage(secondReissueResultActions, REUSED_REFRESH_TOKEN.getMessage());
 	}
 }
