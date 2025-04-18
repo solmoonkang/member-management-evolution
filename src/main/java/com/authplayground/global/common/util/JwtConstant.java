@@ -1,7 +1,5 @@
 package com.authplayground.global.common.util;
 
-import java.time.Duration;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -16,5 +14,5 @@ public class JwtConstant {
 	public static final String CLAIM_NICKNAME = "nickname";
 	public static final String CLAIM_ROLE = "role";
 
-	public static final Duration REFRESH_TOKEN_EXPIRED = Duration.ofDays(14);
+	public static final long REFRESH_TOKEN_EXPIRED = 1000 * 60 * 60 * 24 * 14;
 }
